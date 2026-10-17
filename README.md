@@ -20,6 +20,9 @@ Entered in **Track 03 - Company Brain** and **Track 01 - Agents That Act on Conn
 | Multi-hop, n=40 | **95.0%** | 22.5% | 0.0% |
 | Single-hop, n=20 | 100.0% | 95.0% | 0.0% |
 
+
+Eval as passes over total (same frozen set): graph agent **58/60** correct (single-hop 20/20, multi-hop 38/40); vector RAG 28/60 (19/20 and 9/40); LLM alone 0/60.
+
 Take FalkorDB away and multi-hop accuracy falls by 72.5 points (single-hop lookups stay competitive for retrieval - we report that too).
 Metric used throughout (README, video, blog): **hit@3 = the share of evaluated pull requests whose real approver is among the top three suggested approvers.**
 
