@@ -36,7 +36,20 @@ Entered in **Track 03 - Company Brain** and **Track 01 - Agents That Act on Conn
 - E1 graph [hard] hit@3: 80.8% (hit@1 55.2%, n=344)
 - E1 graph [no_nearby_history] hit@3: 84.9% (hit@1 69.7%, n=33)
 - E1 graph [eligible_all_inactive] hit@3: 85.7% (hit@1 71.4%, n=35)
-- Tests: 85/85 passing
+- E1 graph minus owners_history [all] hit@3: +3.9 pp (95% CI +2.0 to +5.9, n=716)
+- E1 graph minus owners_history [hard] hit@3: +5.2 pp (95% CI +1.7 to +8.7, n=344)
+- E1 graph minus owners_history [no_nearby_history] hit@3: +57.6 pp (95% CI +39.4 to +75.8, n=33)
+- E1 graph minus owners_history [eligible_all_inactive] hit@3: +57.1 pp (95% CI +37.1 to +74.3, n=35)
+- E2 graph [single-hop, n=20] accuracy: 100.0%
+- E2 graph [multi-hop, n=40] accuracy: 95.0%
+- E2 rag [single-hop, n=20] accuracy: 95.0%
+- E2 rag [multi-hop, n=40] accuracy: 22.5%
+- E2 rag_k12 [single-hop, n=20] accuracy: 95.0%
+- E2 rag_k12 [multi-hop, n=40] accuracy: 22.5%
+- E2 llm_only [single-hop, n=20] accuracy: 0.0%
+- E2 llm_only [multi-hop, n=40] accuracy: 0.0%
+- E2 ablation (graph tools removed -> vector RAG), multi-hop drop: 72.5 pp
+- Tests: 86/86 passing
 - Problem size: OWNERS approver handles with zero approvals in the last 90 days (2026-07-19..2026-10-17): 99 of 167 (59.3%)
 - Problem size: OWNERS files where at most a quarter of the listed approvers were active: 46
 - Problem size: open KEPs whose recorded approvers hold no current approver or SIG-chair role: 45

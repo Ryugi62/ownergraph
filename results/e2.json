@@ -1,0 +1,578 @@
+{
+  "n": {
+    "single": 20,
+    "multi": 40
+  },
+  "systems": {
+    "graph": {
+      "single": 1.0,
+      "multi": 0.95
+    },
+    "rag": {
+      "single": 0.95,
+      "multi": 0.225
+    },
+    "rag_k12": {
+      "single": 0.95,
+      "multi": 0.225
+    },
+    "llm_only": {
+      "single": 0.0,
+      "multi": 0.0
+    }
+  },
+  "by_type": {
+    "graph": {
+      "gate_approvers": "13/15",
+      "gate_sig_chairs": "15/15",
+      "path_eligible": "10/10",
+      "kep_sig": "10/10",
+      "kep_status": "10/10"
+    },
+    "rag": {
+      "gate_approvers": "9/15",
+      "gate_sig_chairs": "0/15",
+      "path_eligible": "0/10",
+      "kep_sig": "10/10",
+      "kep_status": "9/10"
+    },
+    "rag_k12": {
+      "gate_approvers": "9/15",
+      "gate_sig_chairs": "0/15",
+      "path_eligible": "0/10",
+      "kep_sig": "10/10",
+      "kep_status": "9/10"
+    },
+    "llm_only": {
+      "gate_approvers": "0/15",
+      "gate_sig_chairs": "0/15",
+      "path_eligible": "0/10",
+      "kep_sig": "0/10",
+      "kep_status": "0/10"
+    }
+  },
+  "failures": {
+    "graph": [
+      {
+        "id": "m1-4639",
+        "answer": "ERROR TimeoutError"
+      },
+      {
+        "id": "m1-5018",
+        "answer": "ERROR TimeoutError"
+      }
+    ],
+    "rag": [
+      {
+        "id": "m1-4247",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5958",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-1860",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4988",
+        "answer": "ERROR TimeoutError"
+      },
+      {
+        "id": "m1-4960",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-3331",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4781",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5030",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4009",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5365",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5491",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-1491",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2317",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2365",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2172",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2879",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-3325",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4438",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5495",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-1967",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-85",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_registry_scheduling",
+        "answer": "[\"sig-scheduling-maintainers\"]"
+      },
+      {
+        "id": "m3-pkg_controller_statefulset",
+        "answer": "[\"sig-apps-approvers\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubelet_pkg_apis",
+        "answer": "[\"api-approvers\"]"
+      },
+      {
+        "id": "m3-hack_tools_instrumentation",
+        "answer": "[\"sig-instrumentation-approvers\", \"logicalhan\", \"piosz\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_client-go_tools_auth",
+        "answer": "[\"sig-auth-authenticators-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_controller_endpointslicemirroring",
+        "answer": "[\"robscott\", \"freehan\", \"sig-network-approvers\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubectl_pkg_util_i18n_translations",
+        "answer": "[\"sig-cli-maintainers\", \"brendandburns\"]"
+      },
+      {
+        "id": "m3-pkg_util_bandwidth",
+        "answer": "[\"sig-network-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_registry_rbac",
+        "answer": "[\"sig-auth-authorizers-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_windows_service",
+        "answer": "[\"sig-node-approvers\"]"
+      },
+      {
+        "id": "s2-1710",
+        "answer": "[]"
+      }
+    ],
+    "rag_k12": [
+      {
+        "id": "m1-4247",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5958",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-1860",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4988",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4960",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-3331",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4781",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5030",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4009",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5365",
+        "answer": "[\"@mrunalp\", \"@haircommander\"]"
+      },
+      {
+        "id": "m2-5491",
+        "answer": "[\"@dom4ha\"]"
+      },
+      {
+        "id": "m2-1491",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2317",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2365",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2172",
+        "answer": "[\"@mrunalp\", \"@dchen1107\", \"@haircommander\"]"
+      },
+      {
+        "id": "m2-2879",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-3325",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4438",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5495",
+        "answer": "[\"@thockin\", \"@danwinship\", \"@aojea\"]"
+      },
+      {
+        "id": "m2-1967",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-85",
+        "answer": "[\"@kow3ns\", \"@liggitt\", \"@wojtek-t\"]"
+      },
+      {
+        "id": "m3-pkg_registry_scheduling",
+        "answer": "[\"sig-scheduling-maintainers\"]"
+      },
+      {
+        "id": "m3-pkg_controller_statefulset",
+        "answer": "[\"sig-apps-approvers\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubelet_pkg_apis",
+        "answer": "[\"api-approvers\"]"
+      },
+      {
+        "id": "m3-hack_tools_instrumentation",
+        "answer": "[\"sig-instrumentation-approvers\", \"logicalhan\", \"piosz\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_client-go_tools_auth",
+        "answer": "[\"sig-auth-authenticators-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_controller_endpointslicemirroring",
+        "answer": "[\"robscott\", \"freehan\", \"sig-network-approvers\"]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubectl_pkg_util_i18n_translations",
+        "answer": "[\"sig-cli-maintainers\", \"brendandburns\"]"
+      },
+      {
+        "id": "m3-pkg_util_bandwidth",
+        "answer": "[\"sig-network-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_registry_rbac",
+        "answer": "[\"sig-auth-authorizers-approvers\"]"
+      },
+      {
+        "id": "m3-pkg_windows_service",
+        "answer": "[\"sig-node-approvers\"]"
+      },
+      {
+        "id": "s2-1710",
+        "answer": "[]"
+      }
+    ],
+    "llm_only": [
+      {
+        "id": "m1-3017",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-614",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4247",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-2268",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5958",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-1860",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4639",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4988",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5018",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-4960",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5237",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5234",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-3331",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-5471",
+        "answer": "[]"
+      },
+      {
+        "id": "m1-2249",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4781",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5030",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4009",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5365",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5491",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-1491",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2317",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2365",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2172",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-2879",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-3325",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-4438",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-5495",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-1967",
+        "answer": "[]"
+      },
+      {
+        "id": "m2-85",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_registry_scheduling",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_controller_statefulset",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubelet_pkg_apis",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-hack_tools_instrumentation",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_client-go_tools_auth",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_controller_endpointslicemirroring",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-staging_src_k8s.io_kubectl_pkg_util_i18n_translations",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_util_bandwidth",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_registry_rbac",
+        "answer": "[]"
+      },
+      {
+        "id": "m3-pkg_windows_service",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-4656",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-2799",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-4460",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-3094",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-1635",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-2258",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-2501",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-2568",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-2879",
+        "answer": "[]"
+      },
+      {
+        "id": "s1-3331",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-2551",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-3716",
+        "answer": "ERROR TimeoutError"
+      },
+      {
+        "id": "s2-2494",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-2953",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-688",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-1432",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-5419",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-1710",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-5365",
+        "answer": "[]"
+      },
+      {
+        "id": "s2-2876",
+        "answer": "[]"
+      }
+    ]
+  },
+  "ablation_multi_drop_pp": 72.5,
+  "llm": "gemini-3.1-flash-lite",
+  "rag": {
+    "retriever": "tf-idf cosine",
+    "chunks": 1370,
+    "k": [
+      6,
+      12
+    ]
+  }
+}
