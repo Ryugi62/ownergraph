@@ -1,6 +1,7 @@
 """AC-18 / condition #7: README numbers are generated from results JSON; a mismatch fails."""
 import re
 
+SHOWN = ("all", "hard", "no_nearby_history", "eligible_all_inactive")
 START, END = "<!-- numbers:start -->", "<!-- numbers:end -->"
 
 
@@ -13,7 +14,17 @@ def render_numbers_block(results: dict) -> str:
     lines = [f"- E1 evaluated PRs (merged after cutoff, with a non-author approver): {e1.get('n_eval', 'n/a')}"]
     for name, segs in e1.get("methods", {}).items():
         for seg, m in segs.items():
+            if seg not in SHOWN:
+                continue
             lines.append(f"- E1 {name} [{seg}] hit@3: {m['hit@3'] * 100:.1f}%" + (f" (hit@1 {m['hit@1'] * 100:.1f}%, n={m['n']})" if "hit@1" in m else ""))
+    e2 = results.get("e2")
+    if e2:
+        n = e2["n"]
+        for name, acc in e2["systems"].items():
+            lines.append(f"- E2 {name} [single-hop, n={n['single']}] accuracy: {acc['single'] * 100:.1f}%")
+            lines.append(f"- E2 {name} [multi-hop, n={n['multi']}] accuracy: {acc['multi'] * 100:.1f}%")
+        if "ablation_multi_drop_pp" in e2:
+            lines.append(f"- E2 ablation (graph tools removed -> vector RAG), multi-hop drop: {e2['ablation_multi_drop_pp']:.1f} pp")
     t = results.get("tests")
     if t:
         lines.append(f"- Tests: {t['passed']}/{t['total']} passing")

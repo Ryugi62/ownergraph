@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..adapters.falkordb_repository import FalkorRepository
-from ..adapters.parsers import read_prs
+from ..adapters.parsers import prs_from_text
+from .datafiles import read_text
 from ..application.eval_e1 import run_e1
 from ..application.graph_predictor import GraphPredictor
 from ..application.stats import paired_bootstrap_diff
@@ -35,7 +36,7 @@ class CachedRepo:
 def run(raw: Path, db: str, out: Path, limit: int | None = None, log=print, cutoff=CUTOFF, until=None, tier_weights=None,
         graph_name="e1:kubernetes@2026-08-01") -> dict:
     CUTOFF_ = cutoff
-    prs = read_prs(raw / "prs.jsonl")
+    prs = prs_from_text(read_text(raw, "prs.jsonl"))
     train = [p for p in prs if p.merged_at < cutoff]
     test = sorted((p for p in prs if p.merged_at >= cutoff and (until is None or p.merged_at < until)), key=lambda p: p.number)
     if limit:

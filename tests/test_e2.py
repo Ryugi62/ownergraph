@@ -52,3 +52,21 @@ def test_rag_agent_retrieves_relevant_chunk():
     llm = FakeLlm(replies=['["dchen1107"]'])
     RagAgent(tfidf_chunks(chunks), llm, k=1).answer("Who approved SidecarContainers?")
     assert "dchen1107" in llm.calls[0] and "someoneelse" not in llm.calls[0]
+
+
+def test_run_e2_aborts_when_a_system_mostly_errors():
+    import pytest
+    from ownergraph.application.eval_e2 import SystemicFailure
+    qs = [q("multi", "t", ("a",)) for _ in range(8)]
+    def boom(question): raise RuntimeError("HTTP 404")
+    with pytest.raises(SystemicFailure):
+        run_e2(qs, {"graph": boom})
+
+
+def test_grade_ignores_at_prefix_and_retriever_matches_kep_numbers_and_paths():
+    assert grade(q(key=("liggitt",)), '["@liggitt"]')
+    r = tfidf_chunks([("kep:keps/sig-node/753-sidecar/kep.yaml", "title: Sidecar\nkep-number: 753\nstatus: implemented"),
+                      ("owners:pkg/registry/scheduling/OWNERS", "approvers:\n- alice"),
+                      ("kep:other", "kep-number: 9")])
+    assert r.search("Which SIG owns KEP-753?", 1)[0][0].startswith("kep:keps/sig-node/753")
+    assert r.search("approve pkg/registry/scheduling/example_test.go", 1)[0][0].startswith("owners:pkg/registry/scheduling")

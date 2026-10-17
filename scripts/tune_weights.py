@@ -4,16 +4,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 sys.path.insert(0, ".")
 from ownergraph.adapters.falkordb_repository import FalkorRepository
-from ownergraph.adapters.parsers import read_prs
+from ownergraph.adapters.parsers import prs_from_text
+from ownergraph.infrastructure.datafiles import read_text
 from ownergraph.application.eval_e1 import run_e1
 from ownergraph.application.graph_predictor import GraphPredictor
 from ownergraph.domain.baselines import OwnersHistory
 from ownergraph.infrastructure.e1_run import CachedRepo
 from ownergraph.infrastructure.loader import load_profile, read_owners
 
-raw = Path("data/raw")
+raw = Path("data/snapshot")
 cut = datetime(2026, 7, 1, tzinfo=timezone.utc); until = datetime(2026, 8, 1, tzinfo=timezone.utc)
-prs = read_prs(raw / "prs.jsonl")
+prs = prs_from_text(read_text(raw, "prs.jsonl"))
 train = [p for p in prs if p.merged_at < cut]
 test = [p for p in prs if cut <= p.merged_at < until]
 repo = FalkorRepository.embedded("data/val.db", graph="val")

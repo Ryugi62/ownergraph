@@ -137,3 +137,12 @@ def test_owners_health_zero_listed_is_zero_not_error():
 def test_kep_with_missing_fields_still_constructs():
     k = KepRecord(9, "t", None, None, approvers=frozenset())
     assert orphaned_decisions([k], current_roles=set()) == []  # no recorded approvers -> nothing to orphan
+
+
+def test_drift_summary_aggregates_without_naming_people():
+    from ownergraph.domain.health import summarize_drift
+    s = summarize_drift({"a": {"x", "y"}, "b": {"y", "z"}, "c": set()}, active={"x"})
+    assert s.unique_approvers == 3 and s.inactive_approvers == 2 and round(s.inactive_share, 3) == 0.667
+    assert [h.path for h in s.files] == ["a", "b", "c"] and s.files[0].ratio == 0.5
+    assert not any(isinstance(v, (set, frozenset, list, tuple)) for h in s.files for v in vars(h).values())
+    assert summarize_drift({}, set()).inactive_share == 0.0

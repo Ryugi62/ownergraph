@@ -52,3 +52,8 @@ class FakeRepo:
         return len(prs)
     def get_snapshot(self): return self.snapshot
     def set_snapshot(self, at): self.snapshot = at
+
+
+class DriftFakeRepo(FakeRepo):
+    def owners_listing(self): return {"pkg": {"x", "y", "z", "w"}, "lib": {"x"}}
+    def active_approvers(self, since): return {"x"}

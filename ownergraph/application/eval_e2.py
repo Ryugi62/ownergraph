@@ -26,11 +26,15 @@ def extract_list(text: str) -> list:
 
 
 def grade(q: Question, answer: str) -> bool:
-    got = {x.strip().lower() for x in extract_list(answer) if str(x).strip()}
-    key = {k.lower() for k in q.key}
+    got = {x.strip().lstrip("@").lower() for x in extract_list(answer) if str(x).strip()}
+    key = {k.lstrip("@").lower() for k in q.key}
     if q.mode == "member":
         return bool(got) and got <= key
     return got == key
+
+
+class SystemicFailure(RuntimeError):
+    """More than a quarter of a system's calls raised: the run measures the outage, not the system. Stop instead of publishing zeros."""
 
 
 def run_e2(questions, systems: dict) -> dict:
@@ -40,12 +44,15 @@ def run_e2(questions, systems: dict) -> dict:
     out = {"n": n, "systems": {}, "by_type": {}, "failures": {}}
     for name, fn in systems.items():
         ok = {"single": 0, "multi": 0}
-        by_type, fails = {}, []
+        by_type, fails, errors = {}, [], 0
         for q in questions:
             try:
                 ans = fn(q)
             except Exception as e:  # a failing system answers nothing
                 ans = f"ERROR {type(e).__name__}"
+                errors += 1
+                if errors > max(3, len(questions) // 4):
+                    raise SystemicFailure(f"{name}: {errors} errors, last {type(e).__name__}: {e}") from e
             good = grade(q, ans)
             ok[q.kind] += good
             t = by_type.setdefault(q.type, [0, 0])
@@ -55,6 +62,8 @@ def run_e2(questions, systems: dict) -> dict:
         out["systems"][name] = {k: round(ok[k] / n[k], 4) if n[k] else None for k in ok}
         out["by_type"][name] = {t: f"{a}/{b}" for t, (a, b) in by_type.items()}
         out["failures"][name] = fails
-    if "graph" in systems and "rag" in systems and n["multi"]:
-        out["ablation_multi_drop_pp"] = round(100 * (out["systems"]["graph"]["multi"] - out["systems"]["rag"]["multi"]), 1)
+    rags = [k for k in systems if k.startswith("rag")]
+    if "graph" in systems and rags and n["multi"]:  # graph tools removed -> the strongest vector-RAG variant
+        best = max(out["systems"][k]["multi"] for k in rags)
+        out["ablation_multi_drop_pp"] = round(100 * (out["systems"]["graph"]["multi"] - best), 1)
     return out

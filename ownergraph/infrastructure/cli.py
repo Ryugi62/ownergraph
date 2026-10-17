@@ -4,7 +4,7 @@ import argparse, json, os
 from datetime import datetime, timezone
 from pathlib import Path
 
-RAW = Path("data/raw")
+RAW = Path(os.environ.get("OWNERGRAPH_DATA", "data/snapshot"))
 CUTOFF = datetime(2026, 8, 1, tzinfo=timezone.utc)
 
 
@@ -24,7 +24,10 @@ def main(argv=None):
     s = sub.add_parser("serve")
     s.add_argument("--port", type=int, default=8000)
     s.add_argument("--host", default=os.environ.get("OWNERGRAPH_HOST", "127.0.0.1"))
+    s.add_argument("--load-if-empty", action="store_true", help="build the demo graph first when the database has none")
     sub.add_parser("mcp")
+    rd = sub.add_parser("readme-numbers")
+    rd.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
     if args.cmd == "load":
         from .composition import make_repo
@@ -47,8 +50,25 @@ def main(argv=None):
         import uvicorn
         from .composition import build_services
         from ..adapters.http_api import create_app
-        service, _, _ = build_services()
-        uvicorn.run(create_app(service), host=args.host, port=args.port)
+        service, repo, _ = build_services()
+        if args.load_if_empty and repo.stats()["nodes"] == 0:
+            from .loader import load_profile
+            print("empty graph: loading snapshot", load_profile(repo, RAW, "demo", CUTOFF), flush=True)
+        uvicorn.run(create_app(service, repo), host=args.host, port=args.port)
+    elif args.cmd == "readme-numbers":
+        from .readme_numbers import check_readme, write_readme_block
+        res = {}
+        for key in ("e1", "e2", "tests"):
+            f = Path("results") / f"{key}.json"
+            if f.exists():
+                res[key] = json.loads(f.read_text())
+        readme = Path("README.md").read_text(encoding="utf-8")
+        if args.check:
+            check_readme(readme, res)
+            print("README numbers match results/*.json")
+        else:
+            Path("README.md").write_text(write_readme_block(readme, res), encoding="utf-8")
+            print("README numbers block rewritten from results/*.json")
     elif args.cmd == "mcp":
         from ..adapters.mcp_server import main as mcp_main
         mcp_main()

@@ -111,5 +111,25 @@ def parse_pr(node: dict) -> PullRequest:
         kep_refs=tuple(sorted({int(x) for x in KEP_REF.findall(text)})), url=node.get("url", ""))
 
 
+def pr_to_compact(pr: PullRequest) -> dict:
+    """Snapshot form: no comments, approvers already extracted (smaller, and no free-text from other people)."""
+    return {"number": pr.number, "title": pr.title, "body": pr.body, "author": pr.author, "merged_at": pr.merged_at.isoformat(),
+            "files": list(pr.files), "labels": list(pr.labels), "approvers": sorted(pr.approvers), "kep_refs": list(pr.kep_refs), "url": pr.url}
+
+
+def pr_from_compact(d: dict) -> PullRequest:
+    return PullRequest(d["number"], d["title"], d.get("body", ""), d["author"], datetime.fromisoformat(d["merged_at"]),
+                       tuple(d["files"]), tuple(d.get("labels", ())), frozenset(d["approvers"]), (), tuple(d.get("kep_refs", ())), d.get("url", ""))
+
+
+def prs_from_text(text: str) -> list:
+    out = []
+    for line in text.splitlines():
+        if line.strip():
+            d = json.loads(line)
+            out.append(parse_pr(d) if "comments" in d else pr_from_compact(d))
+    return out
+
+
 def read_prs(path) -> list:
-    return [parse_pr(json.loads(l)) for l in open(path) if l.strip()]
+    return prs_from_text(open(path).read())

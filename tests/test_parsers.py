@@ -34,3 +34,17 @@ def test_aliases_and_pr_node():
                                     "body": "[APPROVALNOTIFIER] This PR is **APPROVED**\n\nThis pull-request has been approved by: *bob*\n"}]}}
     pr = parse_pr(node)
     assert pr.approvers == {"bob"} and pr.kep_refs == (1234,) and pr.files == ("pkg/a.go",)
+
+
+def test_compact_snapshot_roundtrip_and_autodetect():
+    from ownergraph.adapters.parsers import prs_from_text, pr_to_compact
+    node = {"number": 5, "title": "KEP-1234: x", "bodyText": "b", "url": "u", "mergedAt": "2026-09-01T00:00:00Z",
+            "author": {"login": "au"}, "labels": {"nodes": [{"name": "sig/node"}]}, "files": {"nodes": [{"path": "a/b.go"}]},
+            "comments": {"nodes": [{"author": {"login": "kubernetes-prow"}, "createdAt": "2026-09-01T01:00:00Z",
+                                    "body": "[APPROVALNOTIFIER] **APPROVED**\n\nThis pull-request has been approved by: *bob*\n"}]}}
+    pr = parse_pr(node)
+    compact = json.dumps(pr_to_compact(pr))
+    assert "comments" not in compact and "/assign" not in compact
+    back = prs_from_text(compact + "\n")[0]
+    assert (back.number, back.approvers, back.files, back.kep_refs, back.merged_at) == (pr.number, pr.approvers, pr.files, pr.kep_refs, pr.merged_at)
+    assert prs_from_text(json.dumps(node) + "\n")[0].approvers == pr.approvers  # raw GraphQL nodes still parse

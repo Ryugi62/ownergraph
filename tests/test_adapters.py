@@ -59,3 +59,12 @@ def test_ui_answer_card_order():  # UI 수용기준
     order = [html.index(f'id="{i}"') for i in ("question", "chips", "answer-sentence", "path-graph", "cypher-panel", "sources")]
     assert order == sorted(order)
     assert html.count('class="chip"') == 3 and 'id="loading"' in html and "Querying the graph" in html
+
+
+def test_api_drift_reports_files_and_aggregate_only():
+    from tests.fakes import DriftFakeRepo
+    c = TestClient(create_app(AskService(FakeRepo(), FakeLlm(), FakeClock(d(2026, 10, 1))), repo=DriftFakeRepo()))
+    j = c.get("/api/drift").json()
+    assert j["unique_approvers"] == 4 and j["inactive_approvers"] == 3
+    assert {f["path"]: f["ratio"] for f in j["worst_files"]} == {"pkg": 0.25, "lib": 1.0}
+    assert "x" not in str(j) and "logins" not in j  # no person-level data leaves the endpoint

@@ -5,7 +5,7 @@ import json, os, time, urllib.error, urllib.request
 
 
 class GeminiLlm:
-    def __init__(self, key=None, model="gemini-2.5-flash-lite", timeout=60, opener=urllib.request.urlopen,
+    def __init__(self, key=None, model="gemini-3.1-flash-lite", timeout=60, opener=urllib.request.urlopen,
                  sleep=time.sleep, min_interval=0.0, attempts=6):
         self.key = key or os.environ.get("GEMINI_API_KEY")
         self.model, self.timeout, self.opener, self.sleep = model, timeout, opener, sleep

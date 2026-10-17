@@ -104,3 +104,47 @@ def test_kep_deciders_follow_implements_edge_and_respect_cutoff(repo):
     rows = repo.kep_deciders(7, cutoff=d(2026, 10, 1)).rows
     assert [r["login"] for r in rows] == ["zed2"] and rows[0]["tier"] == "kep"
     assert repo.kep_deciders(7, cutoff=d(2026, 9, 1)).rows == []
+
+
+def test_numbers_block_includes_e2_and_selected_e1_segments():
+    res = {"e1": {"n_eval": 10, "methods": {"graph": {"all": {"hit@3": 0.5, "hit@1": 0.25, "n": 10}, "easy": {"hit@3": 0.1, "hit@1": 0.1, "n": 1}}}},
+           "e2": {"n": {"single": 2, "multi": 3}, "systems": {"graph": {"single": 1.0, "multi": 0.9}, "rag": {"single": 1.0, "multi": 0.3}},
+                  "ablation_multi_drop_pp": 60.0}}
+    block = render_numbers_block(res)
+    assert "E2 graph [multi-hop, n=3] accuracy: 90.0%" in block and "E2 rag [multi-hop, n=3] accuracy: 30.0%" in block
+    assert "[easy]" not in block and "[all]" in block
+
+
+def test_datafiles_reads_plain_or_gzipped(tmp_path):
+    from ownergraph.infrastructure.datafiles import read_text, write_gz
+    (tmp_path / "a.txt").write_text("plain")
+    write_gz(tmp_path, "b.txt", "zipped")
+    assert read_text(tmp_path, "a.txt") == "plain" and read_text(tmp_path, "b.txt") == "zipped"
+
+
+def test_repo_drift_inputs_from_graph(repo):
+    listing = repo.owners_listing()
+    assert listing["pkg"] == {"x", "m1", "m2"} and listing["pkg/a"] == {"y"}
+    assert repo.active_approvers(since=d(2026, 9, 3)) == {"m1"}   # y approved on 9/1 (too old), m1 on 9/5
+    assert repo.active_approvers(since=d(2026, 8, 1)) == {"y", "m1"}
+
+
+def test_route_candidates_pick_sig_and_approvers_by_actual_activity(tmp_path):
+    from ownergraph.adapters.falkordb_repository import FalkorRepository
+    from ownergraph.domain.owners import OwnersRule
+    r = FalkorRepository.embedded(str(tmp_path / "r.db"), graph="r")
+    r.load_owners({"pkg/kubelet": OwnersRule("pkg/kubelet", approvers=frozenset({"k1", "k2", "k3"}), labels=frozenset({"sig/node"})),
+                   "pkg/apiserver": OwnersRule("pkg/apiserver", approvers=frozenset({"a1"}), labels=frozenset({"sig/api-machinery"})),
+                   "pkg": OwnersRule("pkg", approvers=frozenset({"boss"})),
+                   # many quiet OWNERS dirs whose names also contain "apiserver": file count alone would pick sig-auth
+                   **{f"auth/apiserver-{i}": OwnersRule(f"auth/apiserver-{i}", approvers=frozenset({"z"}), labels=frozenset({"sig/auth"})) for i in range(3)}}, aliases={})
+    r.upsert_keps([KepRecord(5, "kubelet thing", "sig-node", "implementable", approvers=frozenset({"k1"})),
+                   KepRecord(6, "done", "sig-node", "implemented", approvers=frozenset({"k1"}))])
+    r.upsert_prs([PullRequest(i, "t", "", "au", d(2026, 9, i), ("pkg/kubelet/x.go",), (), frozenset(a)) for i, a in
+                  [(1, {"k1", "boss"}), (2, {"k1"}), (3, {"k2"}), (5, {"k2"})]] +
+                 [PullRequest(4, "t", "", "au", d(2026, 9, 4), ("pkg/apiserver/y.go",), (), frozenset({"a1", "boss", "k1"}))])
+    r.link_directory_tree(); r.link_ownership(); r.mark_current({"k1", "k2", "a1", "boss"})
+    row = r.route_candidates(["kubelet"]).rows[0]
+    assert row["sig"] == "sig-node" and row["approvers"][:2] == ["k1", "k2"] and row["keps"] == [5]
+    assert r.route_candidates(["apiserver"]).rows[0]["sig"] == "sig-api-machinery"
+    assert r.route_candidates(["zzz-nothing"]).rows == []

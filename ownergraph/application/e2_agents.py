@@ -31,7 +31,7 @@ class GraphAgent:
         try:
             plan = json.loads(re.search(r"\{.*\}", self.llm.complete(PLAN + question), re.S).group(0))
             qr = _rows_for(self.repo, plan["tool"], str(plan.get("arg", "")))
-        except Exception:
+        except (ValueError, KeyError, AttributeError, TypeError):  # unparsable plan -> abstain; transport errors propagate
             return "[]"
         if not qr.rows:
             return "[]"
@@ -39,20 +39,20 @@ class GraphAgent:
         return self.llm.complete(ANSWER + f"Question: {question}\nGraph rows: {rows}")
 
 
-_TOK = re.compile(r"[a-z0-9][a-z0-9\-_.]*")
+_TOK = re.compile(r"[a-z0-9]+")
 
 
 class Retriever:
     def __init__(self, chunks):
         self.chunks = chunks
         df = defaultdict(int)
-        toks = [set(_TOK.findall(t.lower())) for _, t in chunks]
+        toks = [set(_TOK.findall(f"{c} {t}".lower())) for c, t in chunks]
         for s in toks:
             for w in s:
                 df[w] += 1
         n = len(chunks)
         self.idf = {w: math.log((n + 1) / (c + 1)) + 1 for w, c in df.items()}
-        self.vecs = [self._vec(t) for _, t in chunks]
+        self.vecs = [self._vec(f"{c} {t}") for c, t in chunks]
 
     def _vec(self, text):
         tf = defaultdict(float)

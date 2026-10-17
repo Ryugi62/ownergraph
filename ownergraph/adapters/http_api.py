@@ -21,7 +21,7 @@ class AskBody(BaseModel):
         return v.strip()[:500]
 
 
-def create_app(service) -> FastAPI:
+def create_app(service, repo=None) -> FastAPI:
     app = FastAPI(title="OwnerGraph")
 
     @app.post("/api/ask")
@@ -37,6 +37,20 @@ def create_app(service) -> FastAPI:
             finally:
                 service.llm = real
         return answer_to_dict(service.ask(body.question))
+
+    @app.get("/api/drift")
+    def drift():
+        """UC-9 governance drift: per OWNERS file, the share of listed approvers who approved anything in the last 90 days."""
+        from datetime import timedelta
+        from ..domain.health import summarize_drift
+        if repo is None:
+            return {"error": "no repository configured"}
+        since = service.clock.now() - timedelta(days=90)
+        s = summarize_drift(repo.owners_listing(), repo.active_approvers(since))
+        worst = sorted((f for f in s.files if f.listed), key=lambda f: (f.ratio, -f.listed, f.path))[:15]
+        return {"window_days": 90, "owners_files": len(s.files), "unique_approvers": s.unique_approvers,
+                "inactive_approvers": s.inactive_approvers, "inactive_share": round(s.inactive_share, 4),
+                "worst_files": [{"path": f.path, "listed": f.listed, "active": f.active, "ratio": round(f.ratio, 3)} for f in worst]}
 
     @app.get("/", response_class=HTMLResponse)
     def index():

@@ -1,0 +1,13 @@
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    ports: ["6379:6379"]
+    volumes: ["falkordb-data:/var/lib/falkordb/data"]
+  app:
+    build: .
+    depends_on: [falkordb]
+    ports: ["8000:8000"]
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}   # optional: without it answers are the deterministic graph path only
+volumes:
+  falkordb-data:

@@ -90,19 +90,26 @@ WHERE none(x IN ps WHERE coalesce(x.current, false) = true)
 OPTIONAL MATCH (k)-[:OWNED_BY]->(s:Sig)
 RETURN k.number AS kep, k.title AS title, k.status AS status, s.id AS sig ORDER BY kep"""
 
-Q_ROUTE = """
+Q_ROUTE_SIG = """
 UNWIND $entities AS e
-MATCH (o:OwnersFile)-[:LABELS]->(s:Sig)
-WHERE toLower(o.path) CONTAINS toLower(e) OR toLower(s.id) CONTAINS toLower(e)
-WITH s, count(DISTINCT o) AS w ORDER BY w DESC LIMIT 1
-OPTIONAL MATCH (s)<-[:LABELS]-(of:OwnersFile)<-[:APPROVER_IN]-(g)
-OPTIONAL MATCH (u:Person)-[:MEMBER_OF*0..3]->(g)
-WITH s, u, count(DISTINCT of) AS cover WHERE u IS NOT NULL
-OPTIONAL MATCH (u)-[:APPROVED_PR]->(pr:PR) WITH s, u, cover, count(pr) AS acts
-ORDER BY acts DESC, cover DESC, u.login
-WITH s, collect(u.login)[0..3] AS approvers
-OPTIONAL MATCH (k:Kep)-[:OWNED_BY]->(s) WHERE NOT k.status IN $closed
-RETURN s.id AS sig, approvers, collect(DISTINCT k.number)[0..5] AS keps"""
+MATCH (d:Directory) WHERE toLower(d.path) CONTAINS toLower(e)
+MATCH (d)-[:UNDER]->(:OwnersFile)-[:LABELS]->(s:Sig)
+OPTIONAL MATCH (d)<-[:TOUCHES]-(pr:PR)
+WITH s, count(DISTINCT pr) AS prs, count(DISTINCT d) AS dirs ORDER BY prs DESC, dirs DESC LIMIT 1
+RETURN s.id AS sig"""
+
+Q_ROUTE_APPROVERS = """
+UNWIND $entities AS e
+MATCH (d:Directory) WHERE toLower(d.path) CONTAINS toLower(e)
+MATCH (d)-[:UNDER]->(:OwnersFile)-[:LABELS]->(:Sig {id:$sig})
+MATCH (d)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+WHERE coalesce(u.current, false) = true
+WITH u, count(DISTINCT pr) AS acts ORDER BY acts DESC, u.login LIMIT 3
+RETURN u.login AS login, acts"""
+
+Q_ROUTE_KEPS = """
+MATCH (k:Kep)-[:OWNED_BY]->(:Sig {id:$sig}) WHERE NOT k.status IN $closed
+RETURN k.number AS kep ORDER BY kep LIMIT 5"""
 
 Q_FIND = """
 MATCH (n) WHERE (n:Sig AND toLower(n.id) CONTAINS toLower($name)) OR (n:Person AND toLower(n.login) = toLower($name))
@@ -183,12 +190,32 @@ class FalkorRepository:
         return qr
 
     def route_candidates(self, entities: list) -> QueryResult:
-        qr = self._q(Q_ROUTE, {"entities": entities, "closed": sorted(CLOSED)})
-        qr.rows = [r for r in qr.rows if r.get("sig")]
-        return qr
+        """Issue entities -> the SIG whose directories (matching the entities) see the most merged PRs -> who approves there -> open KEPs."""
+        p = {"entities": entities}
+        sig = self.run_read(Q_ROUTE_SIG, p)
+        if not sig or not sig[0]["sig"]:
+            return QueryResult(" ".join(Q_ROUTE_SIG.split()), p, [])
+        sid = sig[0]["sig"]
+        people = self.run_read(Q_ROUTE_APPROVERS, {**p, "sig": sid})
+        keps = self.run_read(Q_ROUTE_KEPS, {"sig": sid, "closed": sorted(CLOSED)})
+        row = {"sig": sid, "approvers": [x["login"] for x in people], "keps": [x["kep"] for x in keps]}
+        cypher = " ⟶ ".join(" ".join(q.split()) for q in (Q_ROUTE_SIG, Q_ROUTE_APPROVERS, Q_ROUTE_KEPS))
+        urls = [f"https://github.com/kubernetes/community/tree/master/{sid}"] + [f"https://github.com/kubernetes/enhancements/issues/{k}" for k in row["keps"][:3]]
+        return QueryResult(cypher, {**p, "sig": sid}, [row], urls)
 
     def find_entity(self, name: str) -> QueryResult:
         return self._q(Q_FIND, {"name": name})
+
+    def owners_listing(self) -> dict:
+        """OWNERS file path -> set of approver handles (aliases expanded), read from the graph."""
+        rows = self.run_read("""MATCH (o:OwnersFile) OPTIONAL MATCH (u:Person)-[:MEMBER_OF*0..3]->(g)-[:APPROVER_IN]->(o)
+                               RETURN o.path AS path, collect(DISTINCT u.login) AS listed""")
+        return {r["path"]: {x for x in r["listed"] if x} for r in rows}
+
+    def active_approvers(self, since: datetime) -> set:
+        rows = self.run_read("MATCH (u:Person)-[:APPROVED_PR]->(pr:PR) WHERE pr.merged_at >= $s RETURN DISTINCT u.login AS login",
+                             {"s": _epoch(since)})
+        return {r["login"] for r in rows}
 
     def stats(self) -> dict:
         try:
