@@ -79,7 +79,8 @@ WITH collect(DISTINCT k0) + collect(DISTINCT k1) AS ks UNWIND ks AS k
 OPTIONAL MATCH (k)-[:INTRODUCES]->(g:FeatureGate)
 OPTIONAL MATCH (k)-[:OWNED_BY]->(s:Sig)
 OPTIONAL MATCH (k)<-[:APPROVED_KEP]-(a:Person)
-RETURN k.number AS kep, k.title AS title, k.status AS status, k.stage AS stage, g.name AS gate, s.id AS sig, a.login AS approver"""
+OPTIONAL MATCH (s)<-[:CHAIRS]-(c:Person)
+RETURN DISTINCT k.number AS kep, k.title AS title, k.status AS status, k.stage AS stage, g.name AS gate, s.id AS sig, a.login AS approver, c.login AS chair"""
 
 Q_STALE = """
 MATCH (k:Kep)<-[:APPROVED_KEP]-(p:Person)
