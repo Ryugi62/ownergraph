@@ -40,9 +40,13 @@ class FakeRepo:
     def eligible_approvers(self, path): return self._r("eligible", self.eligible_rows)
     def deciders(self, path, cutoff=None): return self._r("deciders", self.decider_rows)
     def decision_trail(self, key): return self._r("trail", self.trail_rows)
-    def route_candidates(self, entities): return self._r("route", self.route_rows)
+    def route_candidates(self, entities):
+        self.last_entities = list(entities)
+        return self._r("route", self.route_rows)
     def stale_decisions(self, sig=None): return self._r("stale", self.stale_rows)
-    def find_entity(self, name): return self._r("find", [{"kind": "Sig", "id": name}])
+    def find_entity(self, name):
+        rows = getattr(self, "find_rows", None)
+        return self._r("find", rows.get(name, []) if rows is not None else [{"kind": "Sig", "id": name}])
     def reviewer_centrality(self, limit=10): return self._r("central", [{"login": "bob", "score": 0.2}, {"login": "alice", "score": 0.1}])
     def kep_status(self, number): return self.keps.get(number, {}).get("status")
     def upsert_keps(self, keps):

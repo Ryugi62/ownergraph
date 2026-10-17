@@ -138,3 +138,20 @@ def test_centrality_question_routes_to_pagerank_tool():  # UC-10
 def test_plan_extracts_feature_gate_names_with_acronym_prefixes(gate):  # regression: 3 of 20 sampled E2 questions abstained
     tool, arg = svc()[0].plan(f"Who chairs the SIG that owns the KEP introducing the feature gate {gate}?")
     assert (tool, arg) == ("explain_feature_gate", gate)
+
+
+def test_route_issue_falls_back_to_directory_segments_without_llm():  # UC-4 without a model: only tokens that are real directory names count
+    repo = FakeRepo(); repo.find_rows = {"apiserver": [{"kind": "Directory", "id": "staging/src/k8s.io/apiserver"}],
+                                         "returns": [{"kind": "Directory", "id": "pkg/returnsomething/x"}]}
+    class Down:
+        def complete(self, p): raise RuntimeError("no LLM")
+    r = route_issue("kube-apiserver returns 500 on watch", repo, Down())
+    assert r.sig == "sig-node" and r.draft_only
+    assert repo.last_entities == ["apiserver"]
+
+
+def test_ask_routes_issue_text_to_draft_routing_answer():  # Track 01 action: a draft, never a write
+    s, _ = svc()
+    s.repo.find_rows = {"kubelet": [{"kind": "Directory", "id": "pkg/kubelet"}]}
+    a = s.ask("Route this issue: kubelet crashes when sidecar restarts")
+    assert a.tool == "route_issue" and not a.abstained and "draft" in a.text.lower() and "sig-node" in a.text

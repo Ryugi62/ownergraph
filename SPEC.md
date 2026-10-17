@@ -52,7 +52,7 @@ Layers: `domain/` (pure) <- `application/` (use cases, ports) <- `adapters/` (Fa
 
 ## 5. Use cases
 UC-1 AskQuestion, UC-2 ApproversForPath, UC-3 ExplainDecision, UC-4 RouteIssue (draft only), UC-5 SyncOrg (incremental),
-UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 RunEvalE3, UC-11 ReviewerCentrality (PageRank, `Which reviewers are load-bearing?`).
+UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 RunEvalE3, UC-12 RouteIssueQuestion (`Route this issue: ...` answers with a draft SIG, approvers and KEPs, deterministic when no LLM: tokens must be real directory names), UC-11 ReviewerCentrality (PageRank, `Which reviewers are load-bearing?`).
 
 ## 6. Acceptance criteria (Given/When/Then)
 - AC-1 Given OWNERS in `a/` (approvers [x]) and `a/b/` ([y]) When eligible_approvers("a/b/c/f.go") Then {x, y}.

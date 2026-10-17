@@ -1,6 +1,6 @@
 """UC-4 RouteIssue: SIG + approvers + related KEPs as a DRAFT (never writes to the real repo)."""
 from __future__ import annotations
-import json
+import json, re
 from dataclasses import dataclass, field
 from .ask import Abstention, Evidence
 
@@ -15,6 +15,25 @@ class RouteProposal:
     abstained: bool = False
 
 
+STOP = {"with", "when", "that", "this", "from", "have", "does", "into", "after", "before", "returns", "error", "fails", "failed", "crashes",
+        "issue", "route", "triage", "cluster", "kubernetes", "should", "would", "while", "there", "which", "about", "using", "running"}
+
+
+def components_without_llm(text: str, repo) -> list:
+    """Deterministic fallback: a token counts only if it is the name of a real directory segment in the graph."""
+    seen, out = set(), []
+    for tok in re.findall(r"[A-Za-z][A-Za-z0-9-]{3,}", text.lower()):
+        tok = tok[5:] if tok.startswith("kube-") and len(tok) > 8 else tok
+        if tok in STOP or tok in seen:
+            continue
+        seen.add(tok)
+        for row in repo.find_entity(tok).rows:
+            if row.get("kind") == "Directory" and tok in str(row.get("id", "")).split("/"):
+                out.append(tok)
+                break
+    return out[:8]
+
+
 def route_issue(text: str, repo, llm):
     try:
         entities = json.loads(llm.complete(
@@ -22,6 +41,8 @@ def route_issue(text: str, repo, llm):
         entities = [str(e) for e in entities][:8]
     except Exception:
         entities = []
+    if not entities:
+        entities = components_without_llm(text, repo)
     if not entities:
         return Abstention("No evidence path: no component could be extracted from the issue.", [], tool="route_issue")
     qr = repo.route_candidates(entities)

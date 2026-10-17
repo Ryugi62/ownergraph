@@ -15,6 +15,7 @@ PATH_RE = re.compile(r"(?<![\w/])([\w.\-]+(?:/[\w.\-*]+)+)")
 KEP_RE = re.compile(r"\bKEP[- ]?(\d+)\b", re.I)
 GATE_RE = re.compile(r"\b((?=[A-Za-z0-9]*[a-z])(?=(?:[A-Za-z0-9]*[A-Z]){2})[A-Za-z0-9]{6,})\b")  # CamelCase gate names, acronym prefixes included (APISelfSubjectReview)
 CENTRAL_RE = re.compile(r"\b(load[- ]bearing|central\w*|pagerank|rel(?:y|ies|ied) on|most relied)\b", re.I)
+ROUTE_RE = re.compile(r"^\s*(route|triage)\b[^:]*:?\s*(.+)$", re.I | re.S)
 STALE_RE = re.compile(r"\b(stale|orphan\w*|abandon\w*|no longer)\b", re.I)
 
 
@@ -55,6 +56,9 @@ class AskService:
 
     # ---- routing (deterministic first, LLM only as fallback planner) ----
     def plan(self, question: str):
+        m = ROUTE_RE.match(question)
+        if m:
+            return "route_issue", m.group(2)
         m = PATH_RE.search(question)
         if m:
             return "approvers_for_path", m.group(1)
@@ -83,6 +87,14 @@ class AskService:
             return self._simple("explain_feature_gate", self.repo.decision_trail(arg), question)
         if tool == "stale_decisions":
             return self._simple("stale_decisions", self.repo.stale_decisions(), question)
+        if tool == "route_issue" and arg:
+            from .route import route_issue
+            r = route_issue(arg, self.repo, self.llm)
+            if getattr(r, "abstained", False):
+                return r
+            text = (f"Draft routing (never written to GitHub): SIG {r.sig}; likely approvers {', '.join(r.approvers)}; "
+                    f"open KEPs {', '.join('KEP-' + str(k) for k in r.related_keps[:3]) or 'none'}")
+            return Answer("route_issue", text, r.evidence)
         if tool == "reviewer_centrality":
             qr = self.repo.reviewer_centrality(10)
             if not qr.rows:
