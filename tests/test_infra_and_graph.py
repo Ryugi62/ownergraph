@@ -154,3 +154,11 @@ def test_numbers_block_includes_paired_difference_with_ci():
     res = {"e1": {"n_eval": 5, "methods": {}, "paired_graph_minus_owners_history_hit3": {"hard": {"n": 3, "diff": 0.05, "ci95": [0.01, 0.09]}, "easy": {"n": 2, "diff": 0.0, "ci95": [0.0, 0.0]}}}}
     block = render_numbers_block(res)
     assert "E1 graph minus owners_history [hard] hit@3: +5.0 pp (95% CI +1.0 to +9.0, n=3)" in block and "[easy]" not in block
+
+
+def test_reviewer_centrality_runs_pagerank_in_falkordb(repo):  # UC-10 FalkorDB algorithm
+    repo.link_reliance()
+    r = repo.reviewer_centrality(5)
+    assert "algo.pageRank" in r.cypher
+    assert {x["login"] for x in r.rows} >= {"y", "m1"} and r.rows == sorted(r.rows, key=lambda x: -x["score"])
+    assert all(u.startswith("https://github.com/") for u in r.urls)

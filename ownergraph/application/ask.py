@@ -14,6 +14,7 @@ from .ports import QueryResult
 PATH_RE = re.compile(r"(?<![\w/])([\w.\-]+(?:/[\w.\-*]+)+)")
 KEP_RE = re.compile(r"\bKEP[- ]?(\d+)\b", re.I)
 GATE_RE = re.compile(r"\b([A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+)\b")
+CENTRAL_RE = re.compile(r"\b(load[- ]bearing|central\w*|pagerank|rel(?:y|ies|ied) on|most relied)\b", re.I)
 STALE_RE = re.compile(r"\b(stale|orphan\w*|abandon\w*|no longer)\b", re.I)
 
 
@@ -62,6 +63,8 @@ class AskService:
             return "explain_feature_gate", m.group(1)
         if STALE_RE.search(question):
             return "stale_decisions", None
+        if CENTRAL_RE.search(question):
+            return "reviewer_centrality", None
         m = GATE_RE.search(question)
         if m:
             return "explain_feature_gate", m.group(1)
@@ -80,6 +83,14 @@ class AskService:
             return self._simple("explain_feature_gate", self.repo.decision_trail(arg), question)
         if tool == "stale_decisions":
             return self._simple("stale_decisions", self.repo.stale_decisions(), question)
+        if tool == "reviewer_centrality":
+            qr = self.repo.reviewer_centrality(10)
+            if not qr.rows:
+                return Abstention("No evidence path in the graph; not answering.", [qr.cypher], tool=tool,
+                                  evidence=Evidence([qr.cypher], [], []))
+            text = "Most relied-on reviewers (FalkorDB PageRank over RELIES_ON, author -> approver): " + ", ".join(
+                r["login"] for r in qr.rows[:5])
+            return self._with_summary(Answer(tool, text, Evidence([qr.cypher], qr.rows, qr.urls, [qr.params])), question)
         if tool == "find_entity" and arg:
             return self._simple("find_entity", self.repo.find_entity(arg), question)
         return Abstention("No evidence path: the question did not map to a graph query.", [], tool=tool or "")

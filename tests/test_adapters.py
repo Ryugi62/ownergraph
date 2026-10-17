@@ -21,11 +21,11 @@ def test_readonly_guard_allows_reads_and_keywords_in_strings():
     assert_read_only("MATCH (a)-[:CHILD_OF*0..]->(b) WHERE a.path = 'SET DELETE' RETURN b")
 
 
-def test_mcp_lists_six_tools():  # AC-16
+def test_mcp_lists_seven_tools():  # AC-16
     server = build_server(AskService(FakeRepo(), FakeLlm(), FakeClock(d(2026, 10, 1))), FakeRepo(), FakeLlm())
     tools = asyncio.run(server.list_tools())
     assert sorted(t.name for t in tools) == sorted(["find_entity", "approvers_for_path", "deciders_for_path",
-                                                    "explain_feature_gate", "route_issue", "stale_decisions"])
+                                                    "explain_feature_gate", "route_issue", "stale_decisions", "reviewer_centrality"])
     assert set(TOOL_NAMES) == {t.name for t in tools}
     assert all(t.inputSchema.get("properties") is not None for t in tools)
 

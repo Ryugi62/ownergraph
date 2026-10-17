@@ -126,3 +126,9 @@ def test_paired_bootstrap_ci_brackets_point_estimate():
     r = paired_bootstrap_diff(a, b, n=500)
     assert r["n"] == 100 and r["diff"] == 0.5 and r["ci95"][0] <= 0.5 <= r["ci95"][1]
     assert paired_bootstrap_diff([], [])["n"] == 0
+
+
+def test_centrality_question_routes_to_pagerank_tool():  # UC-10
+    svc = AskService(FakeRepo(), FakeLlm(), FakeClock(d(2026, 10, 1)))
+    a = svc.ask("Which reviewers are load-bearing?")
+    assert a.tool == "reviewer_centrality" and "bob" in a.text and not a.abstained

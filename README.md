@@ -102,7 +102,7 @@ the OWNERS rules - including where it does not win.
 docker run -d -p 6379:6379 falkordb/falkordb:latest
 
 make setup           # python 3.12 venv (uv) with the dependencies
-make load            # builds the demo graph from data/snapshot (~20 s, 8,000 nodes / 28,723 edges)
+make load            # builds the demo graph from data/snapshot (~20 s, 8,000 nodes / 29,853 edges)
 make demo            # UI + API on http://127.0.0.1:8000
 make test            # the test suite
 make eval            # tests + E1 + E2 + regenerates the numbers block above
@@ -113,8 +113,8 @@ With docker only: `docker build -t ownergraph . && docker run -p 8000:8000 -e FA
 (or `docker-compose.yml`). `GEMINI_API_KEY` is optional: without it every answer is still the deterministic graph path; with it the
 agent phrases the rows and plans free-form questions.
 
-MCP server (six tools, stdio): `python -m ownergraph mcp` - `find_entity`, `approvers_for_path`, `deciders_for_path`,
-`explain_feature_gate`, `route_issue`, `stale_decisions`.
+MCP server (seven tools, stdio): `python -m ownergraph mcp` - `find_entity`, `approvers_for_path`, `deciders_for_path`,
+`explain_feature_gate`, `route_issue`, `stale_decisions`, `reviewer_centrality` (FalkorDB PageRank).
 
 ## Track 03 key focus -> where it is in the product
 

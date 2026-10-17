@@ -52,7 +52,7 @@ Layers: `domain/` (pure) <- `application/` (use cases, ports) <- `adapters/` (Fa
 
 ## 5. Use cases
 UC-1 AskQuestion, UC-2 ApproversForPath, UC-3 ExplainDecision, UC-4 RouteIssue (draft only), UC-5 SyncOrg (incremental),
-UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 RunEvalE3.
+UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 RunEvalE3, UC-11 ReviewerCentrality (PageRank, `Which reviewers are load-bearing?`).
 
 ## 6. Acceptance criteria (Given/When/Then)
 - AC-1 Given OWNERS in `a/` (approvers [x]) and `a/b/` ([y]) When eligible_approvers("a/b/c/f.go") Then {x, y}.
@@ -70,7 +70,7 @@ UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 R
 - AC-13 Given last snapshot T When synced Then only items updated after T are upserted and changed KEP statuses are listed.
 - AC-14 Given E1 When a training PR was merged at or after the cutoff Then the run aborts with a leakage error.
 - AC-15 Given the agent path When a query contains CREATE/MERGE/DELETE/SET/REMOVE (outside string literals) Then it is rejected.
-- AC-16 Given the MCP server When tools/list Then exactly six tools with input schemas.
+- AC-16 Given the MCP server When tools/list Then exactly seven tools (the seventh, `reviewer_centrality`, runs FalkorDB PageRank over the derived `RELIES_ON` edges) with input schemas.
 - AC-17 Given POST /api/ask When an example question is sent Then 200 with an evidence path, server time <= 1 s (fake LLM).
 - AC-18 Given the results JSON When the README numbers are checked Then any mismatch fails.
 - AC-19 Given E1 feature extraction Then only fields known when the PR opened (title, body, files, author) are used - never comments.

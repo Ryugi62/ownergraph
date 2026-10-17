@@ -1,4 +1,4 @@
-"""MCP server (stdio) exposing the six graph tools. Every tool returns {cypher, rows, urls} or an abstention."""
+"""MCP server (stdio) exposing the seven graph tools. Every tool returns {cypher, rows, urls} or an abstention."""
 from __future__ import annotations
 import json
 from mcp.server.fastmcp import FastMCP
@@ -6,7 +6,7 @@ from mcp.server.fastmcp import FastMCP
 from ..application.route import route_issue as _route
 from ..application.serialize import answer_to_dict
 
-TOOL_NAMES = ("find_entity", "approvers_for_path", "deciders_for_path", "explain_feature_gate", "route_issue", "stale_decisions")
+TOOL_NAMES = ("find_entity", "approvers_for_path", "deciders_for_path", "explain_feature_gate", "route_issue", "stale_decisions", "reviewer_centrality")
 
 
 def _qr(qr) -> dict:
@@ -49,6 +49,11 @@ def build_server(service, repo, llm) -> FastMCP:
     def stale_decisions(sig: str = "") -> dict:
         """KEPs whose approvers hold no current approver or SIG leadership role (orphaned decisions)."""
         return _qr(repo.stale_decisions(sig or None))
+
+    @mcp.tool()
+    def reviewer_centrality(limit: int = 10) -> dict:
+        """PageRank (FalkorDB algo.pageRank) over author -> approver reliance: the reviewers other contributors depend on most."""
+        return _qr(repo.reviewer_centrality(max(1, min(limit, 25))))
 
     return mcp
 

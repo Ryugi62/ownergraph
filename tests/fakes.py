@@ -43,6 +43,7 @@ class FakeRepo:
     def route_candidates(self, entities): return self._r("route", self.route_rows)
     def stale_decisions(self, sig=None): return self._r("stale", self.stale_rows)
     def find_entity(self, name): return self._r("find", [{"kind": "Sig", "id": name}])
+    def reviewer_centrality(self, limit=10): return self._r("central", [{"login": "bob", "score": 0.2}, {"login": "alice", "score": 0.1}])
     def kep_status(self, number): return self.keps.get(number, {}).get("status")
     def upsert_keps(self, keps):
         for k in keps: self.keps[k.number] = {"status": k.status}

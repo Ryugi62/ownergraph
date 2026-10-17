@@ -117,6 +117,14 @@ MATCH (n) WHERE (n:Sig AND toLower(n.id) CONTAINS toLower($name)) OR (n:Person A
 RETURN labels(n)[0] AS kind, coalesce(n.id, n.login, n.name, n.path) AS id LIMIT 20"""
 
 
+Q_RELIANCE_EDGES = """
+MATCH (a:Person)-[:AUTHORED_PR]->(:PR)<-[:APPROVED_PR]-(b:Person) WHERE a <> b
+MERGE (a)-[:RELIES_ON]->(b)"""
+Q_CENTRALITY = """
+CALL algo.pageRank('Person', 'RELIES_ON') YIELD node, score
+RETURN node.login AS login, score ORDER BY score DESC LIMIT $limit"""
+
+
 class FalkorRepository:
     def __init__(self, graph):
         self.g = graph
@@ -291,6 +299,13 @@ class FalkorRepository:
             self._w("UNWIND $r AS x UNWIND x.ap AS l MATCH (pr:PR {number:x.n}) MERGE (u:Person {login:l}) MERGE (u)-[r:APPROVED_PR]->(pr) SET r.at=x.at", {"r": chunk})
             self._w("UNWIND $r AS x UNWIND x.keps AS k MATCH (pr:PR {number:x.n}), (kk:Kep {number:k}) MERGE (pr)-[:IMPLEMENTS]->(kk)", {"r": chunk})
         return len(rows)
+
+    def link_reliance(self) -> None:
+        """Derived edge (author)-[:RELIES_ON]->(approver) so FalkorDB's PageRank can rank reviewers other contributors depend on."""
+        self._w(Q_RELIANCE_EDGES)
+
+    def reviewer_centrality(self, limit: int = 10) -> QueryResult:
+        return self._q(Q_CENTRALITY, {"limit": limit}, urls_from=lambda rows: [f"https://github.com/{r['login']}" for r in rows])
 
     def link_directory_tree(self) -> None:
         paths = [r[0] for r in self._w("MATCH (d:Directory) RETURN d.path").result_set]
