@@ -1,0 +1,9 @@
+{
+ "window": "2026-07-19..2026-10-17",
+ "owners_files_with_approvers": 455,
+ "unique_listed_approver_handles": 167,
+ "listed_with_zero_approvals_in_window": 99,
+ "inactive_share": 0.593,
+ "owners_files_with_health_le_0.25": 46,
+ "orphaned_decisions_open_keps": 45
+}

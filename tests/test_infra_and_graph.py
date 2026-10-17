@@ -148,3 +148,9 @@ def test_route_candidates_pick_sig_and_approvers_by_actual_activity(tmp_path):
     assert row["sig"] == "sig-node" and row["approvers"][:2] == ["k1", "k2"] and row["keps"] == [5]
     assert r.route_candidates(["apiserver"]).rows[0]["sig"] == "sig-api-machinery"
     assert r.route_candidates(["zzz-nothing"]).rows == []
+
+
+def test_numbers_block_includes_paired_difference_with_ci():
+    res = {"e1": {"n_eval": 5, "methods": {}, "paired_graph_minus_owners_history_hit3": {"hard": {"n": 3, "diff": 0.05, "ci95": [0.01, 0.09]}, "easy": {"n": 2, "diff": 0.0, "ci95": [0.0, 0.0]}}}}
+    block = render_numbers_block(res)
+    assert "E1 graph minus owners_history [hard] hit@3: +5.0 pp (95% CI +1.0 to +9.0, n=3)" in block and "[easy]" not in block

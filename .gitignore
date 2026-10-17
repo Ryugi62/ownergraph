@@ -3,3 +3,4 @@ __pycache__/
 *.db
 data/raw/
 .pytest_cache/
+*.db.settings

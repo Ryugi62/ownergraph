@@ -17,6 +17,10 @@ def render_numbers_block(results: dict) -> str:
             if seg not in SHOWN:
                 continue
             lines.append(f"- E1 {name} [{seg}] hit@3: {m['hit@3'] * 100:.1f}%" + (f" (hit@1 {m['hit@1'] * 100:.1f}%, n={m['n']})" if "hit@1" in m else ""))
+    for seg, d in e1.get("paired_graph_minus_owners_history_hit3", {}).items():
+        if seg in SHOWN:
+            lines.append(f"- E1 graph minus owners_history [{seg}] hit@3: {d['diff'] * 100:+.1f} pp "
+                         f"(95% CI {d['ci95'][0] * 100:+.1f} to {d['ci95'][1] * 100:+.1f}, n={d['n']})")
     e2 = results.get("e2")
     if e2:
         n = e2["n"]

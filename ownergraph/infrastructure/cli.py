@@ -62,6 +62,14 @@ def main(argv=None):
             f = Path("results") / f"{key}.json"
             if f.exists():
                 res[key] = json.loads(f.read_text())
+        ps = Path("results/problem_size.json")
+        if ps.exists():
+            p = json.loads(ps.read_text())
+            res["extra"] = {
+                f"Problem size: OWNERS approver handles with zero approvals in the last 90 days ({p['window']})":
+                    f"{p['listed_with_zero_approvals_in_window']} of {p['unique_listed_approver_handles']} ({p['inactive_share'] * 100:.1f}%)",
+                "Problem size: OWNERS files where at most a quarter of the listed approvers were active": p["owners_files_with_health_le_0.25"],
+                "Problem size: open KEPs whose recorded approvers hold no current approver or SIG-chair role": p["orphaned_decisions_open_keps"]}
         readme = Path("README.md").read_text(encoding="utf-8")
         if args.check:
             check_readme(readme, res)
