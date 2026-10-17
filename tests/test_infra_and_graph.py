@@ -162,3 +162,18 @@ def test_reviewer_centrality_runs_pagerank_in_falkordb(repo):  # UC-10 FalkorDB 
     assert "algo.pageRank" in r.cypher
     assert {x["login"] for x in r.rows} >= {"y", "m1"} and r.rows == sorted(r.rows, key=lambda x: -x["score"])
     assert all(u.startswith("https://github.com/") for u in r.urls)
+
+
+def test_load_profile_derives_reliance_edges_for_pagerank(tmp_path):  # regression: the loader must call link_reliance
+    import json
+    from ownergraph.adapters.falkordb_repository import FalkorRepository
+    from ownergraph.infrastructure.loader import load_profile
+    raw = tmp_path / "raw"; raw.mkdir()
+    (raw / "owners_at_head.json").write_text(json.dumps({"OWNERS": "approvers:\n- boss\n"}))
+    (raw / "keps.json").write_text("{}")
+    (raw / "sigs.yaml").write_text("sigs: []\n")
+    pr = {"number": 1, "title": "t", "author": "au", "merged_at": "2026-09-01T00:00:00+00:00", "files": ["a/b.go"], "approvers": ["boss"]}
+    (raw / "prs.jsonl").write_text(json.dumps(pr) + "\n")
+    repo = FalkorRepository.embedded(str(tmp_path / "l.db"), graph="l")
+    load_profile(repo, raw, "demo", None, log=lambda *_: None)
+    assert [r["login"] for r in repo.reviewer_centrality(3).rows] == ["boss"] or "boss" in {r["login"] for r in repo.reviewer_centrality(3).rows}

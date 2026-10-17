@@ -46,5 +46,7 @@ def load_profile(repo, raw: Path, profile: str, cutoff=None, log=print) -> dict:
     repo.upsert_prs(prs)
     repo.link_directory_tree()
     repo.link_ownership()
+    if hasattr(repo, "link_reliance"):
+        repo.link_reliance()
     log(f"prs {len(prs)}")
     return {"owners_files": len(rules), "aliases": len(aliases), "keps": len(keps), "prs": len(prs), **repo.stats()}
