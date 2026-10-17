@@ -9,7 +9,7 @@ the graph path, and links to the source on GitHub - and says **"no evidence"** i
 
 Entered in **Track 03 - Company Brain** and **Track 01 - Agents That Act on Connected Data**.
 
-- Try it (no account, no login): `make setup load demo` then open <http://127.0.0.1:8000> - or `docker run` below. Live URL: see the submission form.
+- Try it (no account, no login): **live demo <https://wheel-angeles-beings-reception.trycloudflare.com>** (the docker image below, served from the author's laptop through a Cloudflare quick tunnel - it can be offline, the setup below always works) - or `make setup load demo` and open <http://127.0.0.1:8000>.
 - Built during Graph Hacks (Oct 15-18, 2026). Before the window only design notes and a graph sketch existed; the first commit of this repository is the failing test suite (`git log --reverse`).
 
 ## At a glance
@@ -130,7 +130,7 @@ make eval            # tests + E1 + E2 + regenerates the numbers block above
 
 No docker? The default is an embedded FalkorDB (falkordblite, no daemon): unset `FALKORDB_HOST` and everything above works as is.
 With docker only: `docker build -t ownergraph . && docker run -p 8000:8000 -e FALKORDB_HOST=host.docker.internal ownergraph`
-(or `docker-compose.yml`). `GEMINI_API_KEY` is optional: without it every answer is still the deterministic graph path; with it the
+(a `docker-compose.yml` is included but was not run in our environment). `GEMINI_API_KEY` is optional: without it every answer is still the deterministic graph path; with it the
 agent phrases the rows and plans free-form questions.
 
 MCP server (seven tools, stdio): `python -m ownergraph mcp` - `find_entity`, `approvers_for_path`, `deciders_for_path`,
@@ -138,13 +138,13 @@ MCP server (seven tools, stdio): `python -m ownergraph mcp` - `find_entity`, `ap
 
 ## Track 03 key focus -> where it is in the product
 
-| Key focus (hackathon page) | Feature | Code / query |
-|---|---|---|
-| Knowledge from docs, tickets, and chats in one graph | OWNERS files, KEP documents, SIG leadership and merged PRs in one graph (chats are out of scope: no login-gated data, rule 6) | `infrastructure/loader.py`, graph model below |
-| Who owns what, and who knows what | `approvers_for_path`: OWNERS inheritance + aliases (who *may*) ranked by recent approvals (who *does*) | `Q_ELIGIBLE`, `Q_SELF/Q_SCOPE/...` in `adapters/falkordb_repository.py` |
-| Tracing decisions back to their source | `explain_feature_gate`: gate -> KEP -> owning SIG -> approvers -> chairs, with the kep.yaml link | `Q_TRAIL` |
-| Keeping knowledge current as things change | `SyncService` (incremental upsert since the last snapshot; changed KEP statuses reported - unit-tested, the GitHub poller that feeds it is the first item under What's next) and `stale_decisions` (orphaned decisions) | `application/sync.py`, `Q_STALE` |
-| Answers with clear sources | every response carries the executed Cypher, the rows and GitHub URLs; no path -> "no evidence" | `application/ask.py`, UI "Show Cypher" |
+| Key focus (hackathon page) | Feature | Code / query | Demo video |
+|---|---|---|---|
+| Knowledge from docs, tickets, and chats in one graph | OWNERS files, KEP documents, SIG leadership and merged PRs in one graph (chats are out of scope: no login-gated data, rule 6) | `infrastructure/loader.py`, graph model below | 0:14 |
+| Who owns what, and who knows what | `approvers_for_path`: OWNERS inheritance + aliases (who *may*) ranked by recent approvals (who *does*) | `Q_ELIGIBLE`, `Q_SELF/Q_SCOPE/...` in `adapters/falkordb_repository.py` | 0:17 |
+| Tracing decisions back to their source | `explain_feature_gate`: gate -> KEP -> owning SIG -> approvers -> chairs, with the kep.yaml link | `Q_TRAIL` | 0:44 |
+| Keeping knowledge current as things change | `SyncService` (incremental upsert since the last snapshot; changed KEP statuses reported - unit-tested, the GitHub poller that feeds it is the first item under What's next) and `stale_decisions` (orphaned decisions) | `application/sync.py`, `Q_STALE` | 0:57 |
+| Answers with clear sources | every response carries the executed Cypher, the rows and GitHub URLs; no path -> "no evidence" | `application/ask.py`, UI "Show Cypher" | 0:35 and 1:12 |
 
 ## Graph data model
 
