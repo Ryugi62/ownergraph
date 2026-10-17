@@ -82,6 +82,7 @@ First screen: one question input and three example chips. Answer card order: one
 sources. Loading text "Querying the graph". Captured at 390 px and 1280 px, contrast AA (>= 4.5:1), light and dark.
 - UI-2 A ranking card (`#ranking`) lists every eligible approver with the approvals counted in the window and tags approvers with
   0 recent approvals as dormant; non-ranking answers (KEP trails, stale decisions) render their rows as a table (`#rows`).
+- UI-4 The path picture is typed: OwnersFile boxes joined by CHILD_OF arrows, Person nodes joined by APPROVER_IN (red = dormant); the decision trail draws FeatureGate <-INTRODUCES- KEP -OWNED_BY-> SIG with CHAIRS and APPROVED_KEP edges.
 - UI-3 A governance-drift banner (`#drift`) shows the aggregate from `/api/drift` (inactive approvers / all approvers, window in days) - no per-person data.
 
 ## 11. Test plan

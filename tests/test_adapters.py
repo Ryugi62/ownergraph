@@ -75,3 +75,9 @@ def test_ui_ranking_rows_and_drift_banner():  # UI-2, UI-3
     for needle in ('id="ranking"', 'dormant', 'id="rows"', 'id="drift"', "/api/drift"):
         assert needle in html
     assert html.index('id="answer-sentence"') < html.index('id="ranking"') < html.index('id="path-graph"')
+
+
+def test_ui_path_graph_is_typed():  # UI-4: the path picture names node kinds and relationship types
+    html = open("ownergraph/adapters/web/index.html", encoding="utf-8").read()
+    for needle in ("CHILD_OF", "APPROVER_IN", "INTRODUCES", "OWNED_BY", "CHAIRS", "APPROVED_KEP", "RELIES_ON"):
+        assert needle in html
