@@ -38,7 +38,7 @@ pre{overflow:auto;font-size:13px;white-space:pre-wrap}a{color:var(--pri);overflo
 const $=id=>document.getElementById(id);
 function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function box(x,y,w,t,cls){return `<rect x="${x}" y="${y}" width="${w}" height="28" rx="8" fill="none" stroke="${cls||'currentColor'}" opacity=".85"/><text x="${x+10}" y="${y+18}" font-size="12" fill="currentColor">${esc(t).slice(0,Math.floor(w/7))}</text>`}
-function arrow(x1,y1,x2,y2,label){const mx=(x1+x2)/2,my=(y1+y2)/2;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#5b9bff" stroke-width="1.5" marker-end="url(#ah)"/>`+(label?`<text x="${mx+4}" y="${my-3}" font-size="10" fill="currentColor" opacity=".7">${label}</text>`:'')}
+function arrow(x1,y1,x2,y2,label){const mx=(x1+x2)/2,my=(y1+y2)/2;const hz=Math.abs(y2-y1)<2;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#5b9bff" stroke-width="1.5" marker-end="url(#ah)"/>`+(label?(hz?`<text x="${mx}" y="${my-8}" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">${label}</text>`:`<text x="${mx+6}" y="${my+3}" font-size="10" fill="currentColor" opacity=".7">${label}</text>`):'')}
 function draw(j){
   const rows=(j.evidence&&j.evidence.rows)||[];
   const DEFS='<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5b9bff"/></marker></defs>';
@@ -62,7 +62,7 @@ function draw(j){
       +arrow(330,104,330,68,'APPROVED_KEP')+box(180,104,230,'approvers: '+apps.slice(0,3).join(', ')+(apps.length>3?' +'+(apps.length-3):''));
   } else if(rows.length&&rows[0].approvers!==undefined&&rows[0].sig!==undefined){
     const r0=rows[0];h=160;
-    s+=box(10,40,180,'issue text (draft only)')+arrow(190,54,290,54,'UNDER, LABELS')+box(290,40,130,r0.sig)
+    s+=box(10,40,180,'issue text (draft only)')+arrow(190,54,290,54,'UNDER/LABELS')+box(290,40,130,r0.sig)
       +arrow(420,54,480,54,'OWNED_BY')+box(480,40,150,'open KEPs: '+(r0.keps||[]).slice(0,3).join(', '))
       +arrow(355,104,355,68,'TOUCHES, APPROVED_PR')+box(190,104,330,'approvers: '+(r0.approvers||[]).slice(0,3).join(', '));
   } else if(rows.length&&rows[0].login!==undefined){
