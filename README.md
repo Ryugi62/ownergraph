@@ -87,7 +87,7 @@ the OWNERS rules - including where it does not win.
 - E2 llm_only [single-hop, n=20] accuracy: 0.0%
 - E2 llm_only [multi-hop, n=40] accuracy: 0.0%
 - E2 ablation (graph tools removed -> vector RAG), multi-hop drop: 72.5 pp
-- Tests: 89/89 passing
+- Tests: 94/94 passing
 - Problem size: OWNERS approver handles with zero approvals in the last 90 days (2026-07-19..2026-10-17): 99 of 167 (59.3%)
 - Problem size: OWNERS files where at most a quarter of the listed approvers were active: 46
 - Problem size: open KEPs whose recorded approvers hold no current approver or SIG-chair role: 45
