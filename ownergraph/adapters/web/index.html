@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OwnerGraph</title>
+<style>
+:root{--bg:#fff;--fg:#191f28;--mut:#5b6573;--pri:#1b64da;--card:#f2f4f6;--line:#e5e8eb}
+@media(prefers-color-scheme:dark){:root{--bg:#17171c;--fg:#f2f4f6;--mut:#a0a8b3;--card:#202027;--line:#33333d;--pri:#5b9bff}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.55 -apple-system,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--fg)}
+main{max-width:760px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:24px;margin:0 0 4px}p.sub{color:var(--mut);margin:0 0 20px}
+form{display:flex;gap:8px}input{flex:1;font:inherit;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg)}
+button{font:inherit;padding:0 20px;border:0;border-radius:12px;background:#1b64da;color:#fff;cursor:pointer}
+#chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.chip{border:1px solid var(--line);background:var(--card);color:var(--fg);padding:8px 12px;border-radius:999px;font-size:14px}
+#loading{display:none;color:var(--mut)}section.card{background:var(--card);border-radius:16px;padding:16px;margin-top:12px}
+#answer-sentence{font-size:18px;font-weight:600}svg{width:100%;height:auto}
+pre{overflow:auto;font-size:13px;white-space:pre-wrap}a{color:var(--pri)}
+</style></head><body><main>
+<h1>OwnerGraph</h1><p class="sub">Who may approve it, who actually decides, and why. Every answer is a FalkorDB path.</p>
+<form id="form"><input id="question" aria-label="Question" placeholder="Who can approve pkg/kubelet/kubelet.go ?" autocomplete="off"><button>Ask</button></form>
+<div id="chips">
+<button class="chip" type="button">Who can approve pkg/kubelet/kubelet.go ?</button>
+<button class="chip" type="button">Why does SidecarContainers exist?</button>
+<button class="chip" type="button">Which KEPs are stale?</button></div>
+<div id="loading">Querying the graph…</div>
+<section class="card" id="answer"><div id="answer-sentence">Ask a question to see the graph path.</div></section>
+<section class="card"><div id="path-graph"></div></section>
+<section class="card"><details id="cypher-panel"><summary>Show Cypher</summary><pre id="cypher"></pre></details></section>
+<section class="card" id="sources"><b>Sources</b><ul id="source-list"></ul></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function draw(j){
+  const rows=(j.evidence&&j.evidence.rows)||[];let nodes=[],edges=[];
+  const col=(arr,x)=>arr.slice(0,8).map((t,i)=>({t,x,y:30+i*34}));
+  let a=[],b=[];
+  if(rows.length&&rows[0].owners_file!==undefined){a=[...new Set(rows.map(r=>r.owners_file||'/'))];b=[...new Set(rows.map(r=>r.login))];
+    edges=rows.map(r=>[r.owners_file||'/',r.login]);}
+  else if(rows.length&&rows[0].gate!==undefined){a=[...new Set(rows.map(r=>'KEP-'+r.kep+' '+(r.sig||'')))];b=[...new Set(rows.map(r=>r.gate||r.approver||''))];edges=rows.map(r=>['KEP-'+r.kep+' '+(r.sig||''),r.gate||r.approver||'']);}
+  else {b=rows.slice(0,8).map(r=>r.kep?('KEP-'+r.kep):JSON.stringify(r).slice(0,28));}
+  const A=col(a,20),B=col(b,420),h=Math.max(A.length,B.length)*34+40;
+  const pos=(arr,t)=>arr.find(n=>n.t===t);
+  let s=`<svg viewBox="0 0 640 ${h}" role="img" aria-label="Evidence path">`;
+  for(const [x,y] of edges){const p=pos(A,x),q=pos(B,y);if(p&&q)s+=`<line x1="${p.x+190}" y1="${p.y}" x2="${q.x}" y2="${q.y}" stroke="#5b9bff" opacity=".5"/>`}
+  for(const n of [...A,...B])s+=`<text x="${n.x}" y="${n.y+4}" font-size="12" fill="currentColor">${esc(n.t).slice(0,34)}</text>`;
+  $('path-graph').innerHTML=s+'</svg>';
+}
+async function ask(q){
+  $('loading').style.display='block';
+  const r1=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,summarize:false})});
+  const j=await r1.json();$('loading').style.display='none';
+  $('answer-sentence').textContent=j.abstained?j.text:j.text;draw(j);
+  $('cypher').textContent=(j.evidence.cypher||[]).join('\n\n');
+  $('source-list').innerHTML=(j.evidence.urls||[]).map(u=>`<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></li>`).join('');
+  if(!j.abstained){const r2=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,summarize:true})});
+    const k=await r2.json();if(k.summary)$('answer-sentence').textContent=k.summary;}
+}
+$('form').onsubmit=e=>{e.preventDefault();const q=$('question').value.trim();if(q)ask(q)};
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('question').value=c.textContent;ask(c.textContent)});
+</script></body></html>
