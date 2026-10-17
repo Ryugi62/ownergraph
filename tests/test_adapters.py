@@ -68,3 +68,10 @@ def test_api_drift_reports_files_and_aggregate_only():
     assert j["unique_approvers"] == 4 and j["inactive_approvers"] == 3
     assert {f["path"]: f["ratio"] for f in j["worst_files"]} == {"pkg": 0.25, "lib": 1.0}
     assert "x" not in str(j) and "logins" not in j  # no person-level data leaves the endpoint
+
+
+def test_ui_ranking_rows_and_drift_banner():  # UI-2, UI-3
+    html = open("ownergraph/adapters/web/index.html", encoding="utf-8").read()
+    for needle in ('id="ranking"', 'dormant', 'id="rows"', 'id="drift"', "/api/drift"):
+        assert needle in html
+    assert html.index('id="answer-sentence"') < html.index('id="ranking"') < html.index('id="path-graph"')

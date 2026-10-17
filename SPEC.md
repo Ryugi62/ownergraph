@@ -80,6 +80,9 @@ UC-6 StaleDecisions, UC-7 RunEvalE1, UC-9 DriftReport (per OWNERS file), UC-10 R
 ## 7. UI acceptance criteria <!-- UI 수용기준 -->
 First screen: one question input and three example chips. Answer card order: one-sentence answer, path graph, "Show Cypher",
 sources. Loading text "Querying the graph". Captured at 390 px and 1280 px, contrast AA (>= 4.5:1), light and dark.
+- UI-2 A ranking card (`#ranking`) lists every eligible approver with the approvals counted in the window and tags approvers with
+  0 recent approvals as dormant; non-ranking answers (KEP trails, stale decisions) render their rows as a table (`#rows`).
+- UI-3 A governance-drift banner (`#drift`) shows the aggregate from `/api/drift` (inactive approvers / all approvers, window in days) - no per-person data.
 
 ## 11. Test plan
 The test names in `tests/` map 1:1 to the AC list above (domain, application, adapters, infrastructure), plus boundary tests
