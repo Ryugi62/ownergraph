@@ -44,6 +44,7 @@ function draw(j){
   if(rows.length&&rows[0].owners_file!==undefined){a=[...new Set(rows.map(r=>r.owners_file||'/'))];b=[...new Set(rows.map(r=>r.login))];
     edges=rows.map(r=>[r.owners_file||'/',r.login]);}
   else if(rows.length&&rows[0].gate!==undefined){a=[...new Set(rows.map(r=>'KEP-'+r.kep+' '+(r.sig||'')))];b=[...new Set(rows.map(r=>r.gate||r.approver||''))];edges=rows.map(r=>['KEP-'+r.kep+' '+(r.sig||''),r.gate||r.approver||'']);}
+  else if(rows.length&&rows[0].login!==undefined){b=rows.slice(0,8).map(r=>r.login+(r.score!==undefined?'  '+Number(r.score).toFixed(4):''));}
   else {b=rows.slice(0,8).map(r=>r.kep?('KEP-'+r.kep):JSON.stringify(r).slice(0,28));}
   const A=col(a,20),B=col(b,420),h=Math.max(A.length,B.length)*34+40;
   const pos=(arr,t)=>arr.find(n=>n.t===t);
@@ -65,7 +66,7 @@ function showRows(j){
   const rows=(j.evidence&&j.evidence.rows)||[],box=$('rows');
   if((j.ranking&&j.ranking.length)||!rows.length){box.style.display='none';return}
   const keys=Object.keys(rows[0]).slice(0,6);
-  box.innerHTML='<table><tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>'+rows.slice(0,12).map(r=>'<tr>'+keys.map(k=>`<td>${esc(r[k]??'')}</td>`).join('')+'</tr>').join('')+'</table>';
+  box.innerHTML='<table><tr>'+keys.map(k=>`<th>${esc(k)}</th>`).join('')+'</tr>'+rows.slice(0,12).map(r=>'<tr>'+keys.map(k=>`<td>${esc(typeof r[k]==='number'&&!Number.isInteger(r[k])?r[k].toFixed(4):(r[k]??''))}</td>`).join('')+'</tr>').join('')+'</table>';
   box.style.display='block';
 }
 fetch('/api/drift').then(r=>r.ok?r.json():null).then(d=>{if(d&&d.unique_approvers){const e=$('drift');
