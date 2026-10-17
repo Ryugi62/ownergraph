@@ -10,6 +10,7 @@ the graph path, and links to the source on GitHub - and says **"no evidence"** i
 Entered in **Track 03 - Company Brain** and **Track 01 - Agents That Act on Connected Data**.
 
 - Try it (no account, no login): **live demo <https://wheel-angeles-beings-reception.trycloudflare.com>** (the docker image below, served from the author's laptop through a Cloudflare quick tunnel - it can be offline, the setup below always works) - or `make setup load demo` and open <http://127.0.0.1:8000>.
+- Demo video (2:12, English narration with subtitles): <https://youtu.be/uq5-OIXHNbk> - blog post: [docs/blog.md](docs/blog.md)
 - Built during Graph Hacks (Oct 15-18, 2026). Before the window only design notes and a graph sketch existed; the first commit of this repository is the failing test suite (`git log --reverse`).
 
 ## At a glance
