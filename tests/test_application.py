@@ -111,3 +111,18 @@ def test_run_e1_reports_segments():
     seg = lambda p: "hard" if p.number == 12 else "easy"
     out = run_e1(train=[], test=test, methods={"m": lambda f: ["a"]}, cutoff=cutoff, segment_of=seg)
     assert out["methods"]["m"]["hard"]["hit@3"] == 0.0 and out["methods"]["m"]["easy"]["hit@3"] == 1.0
+
+
+def test_run_e1_exposes_paired_per_pr_hits_for_significance():
+    cutoff = d(2026, 8, 1)
+    test = [pr(10, d(2026, 8, 3), approvers=("a",)), pr(12, d(2026, 8, 4), approvers=("b",))]
+    out = run_e1(train=[], test=test, methods={"m": lambda f: ["a"]}, cutoff=cutoff)
+    assert out["per_pr_hit3"]["m"] == [1, 0] and len(out["per_pr_segments"]) == 2
+
+
+def test_paired_bootstrap_ci_brackets_point_estimate():
+    from ownergraph.application.stats import paired_bootstrap_diff
+    a, b = [1, 1, 1, 0] * 25, [1, 0, 0, 0] * 25
+    r = paired_bootstrap_diff(a, b, n=500)
+    assert r["n"] == 100 and r["diff"] == 0.5 and r["ci95"][0] <= 0.5 <= r["ci95"][1]
+    assert paired_bootstrap_diff([], [])["n"] == 0

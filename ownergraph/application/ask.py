@@ -94,7 +94,7 @@ class AskService:
         for r in dec.rows:
             at = _iso(r.get("at") or r.get("last"))
             for _ in range(int(r.get("n", 1))):
-                approvals.append(Approval(r["login"], at, r.get("path", "")))
+                approvals.append(Approval(r["login"], at, r.get("path", ""), float(r.get("w", 1.0))))
         ranked = rank_approvers({r["login"] for r in elig.rows}, approvals, author, self.clock.now())
         ev = Evidence([elig.cypher, dec.cypher], elig.rows + dec.rows, list(dict.fromkeys(elig.urls + dec.urls)),
                       [elig.params, dec.params])

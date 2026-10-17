@@ -9,6 +9,7 @@ class Approval:
     login: str
     at: datetime
     path: str = ""
+    weight: float = 1.0  # graph proximity: closer directories count more
 
 
 @dataclass(frozen=True)
@@ -25,7 +26,7 @@ def rank_approvers(eligible, approvals, author: str, now: datetime, half_life_da
         if a.login not in eligible:
             continue
         age = max((now - a.at).total_seconds() / 86400.0, 0.0)
-        score[a.login] = score.get(a.login, 0.0) + 0.5 ** (age / half_life_days)
+        score[a.login] = score.get(a.login, 0.0) + a.weight * 0.5 ** (age / half_life_days)
         count[a.login] = count.get(a.login, 0) + 1
     cands = [c for c in eligible if c != author]
     ranked = [RankedApprover(c, round(score.get(c, 0.0), 6), count.get(c, 0)) for c in cands]

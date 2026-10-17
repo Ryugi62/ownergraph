@@ -55,3 +55,52 @@ def test_repository_refuses_write_cypher_on_read_path(repo):
     from ownergraph.adapters.readonly_guard import WriteQueryRejected
     with pytest.raises(WriteQueryRejected):
         repo.run_read("MATCH (n) DETACH DELETE n")
+
+
+def test_eligible_walk_passes_through_directories_without_owners(repo):
+    # regression: intermediate directories that have no OWNERS file (null npo) must not break the walk
+    repo.upsert_prs([PullRequest(3, "deep", "", "au", d(2026, 9, 6), ("pkg/a/deep/x/f.go",), (), frozenset({"y"}))])
+    repo.link_directory_tree()
+    assert {r["login"] for r in repo.eligible_approvers("pkg/a/deep/x/f.go").rows} == {"x", "m1", "m2", "y"}
+
+
+def test_deciders_report_tiers_near_before_scope(repo):
+    rows = repo.deciders("pkg/a/f.go").rows
+    assert rows[0]["tier"] == "self" and all(r["tier"] in {"self", "scope", "nearby", "ancestor", "sig"} for r in rows)
+
+
+def test_no_parent_owners_boundary_inclusive_in_graph(tmp_path):
+    # regression: the OWNERS node at the boundary directory must not count as a blocking node on the walk
+    from ownergraph.adapters.falkordb_repository import FalkorRepository
+    from ownergraph.domain.owners import OwnersRule
+    r = FalkorRepository.embedded(str(tmp_path / "b.db"), graph="b")
+    r.load_owners({"": OwnersRule("", approvers=frozenset({"root"})),
+                   "lib": OwnersRule("lib", approvers=frozenset({"libowner"}), no_parent_owners=True)}, aliases={})
+    r.upsert_prs([PullRequest(1, "t", "", "au", d(2026, 9, 1), ("lib/x/y/f.go",), (), frozenset({"libowner"}))])
+    r.link_directory_tree()
+    assert {x["login"] for x in r.eligible_approvers("lib/x/y/f.go").rows} == {"libowner"}
+
+
+def test_ownership_edges_nearest_owner_and_parent_chain(repo):
+    repo.link_ownership()
+    under = {r["d"]: r["o"] for r in repo.run_read("MATCH (d:Directory)-[:UNDER]->(o:OwnersFile) RETURN d.path AS d, o.path AS o")}
+    assert under["pkg/a"] == "pkg/a" and under["pkg/b"] == "pkg"
+    par = [(r["c"], r["p"]) for r in repo.run_read("MATCH (c:OwnersFile)-[:PARENT_OWNERS]->(p:OwnersFile) RETURN c.path AS c, p.path AS p")]
+    assert par == [("pkg/a", "pkg")]
+
+
+def test_parent_owners_edge_respects_no_parent_owners(tmp_path):
+    from ownergraph.adapters.falkordb_repository import FalkorRepository
+    from ownergraph.domain.owners import OwnersRule
+    r = FalkorRepository.embedded(str(tmp_path / "p.db"), graph="p")
+    r.load_owners({"a": OwnersRule("a", approvers=frozenset({"x"})),
+                   "a/b": OwnersRule("a/b", approvers=frozenset({"y"}), no_parent_owners=True)}, aliases={})
+    r.link_ownership()
+    assert r.run_read("MATCH (:OwnersFile)-[e:PARENT_OWNERS]->(:OwnersFile) RETURN count(e) AS c")[0]["c"] == 0
+
+
+def test_kep_deciders_follow_implements_edge_and_respect_cutoff(repo):
+    repo.upsert_prs([PullRequest(9, "KEP-7 step", "", "au", d(2026, 9, 10), ("x/y.go",), (), frozenset({"zed2"}), kep_refs=(7,))])
+    rows = repo.kep_deciders(7, cutoff=d(2026, 10, 1)).rows
+    assert [r["login"] for r in rows] == ["zed2"] and rows[0]["tier"] == "kep"
+    assert repo.kep_deciders(7, cutoff=d(2026, 9, 1)).rows == []

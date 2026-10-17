@@ -23,20 +23,25 @@ def run_e1(train, test, methods: dict, cutoff, segment_of=None, ks=(1, 3)) -> di
             raise LeakageError(f"training PR #{p.number} merged {p.merged_at} >= cutoff {cutoff}")
     eval_set = [p for p in test if truth_of(p)]
     acc = {m: defaultdict(lambda: defaultdict(list)) for m in methods}
+    per_pr = {m: [] for m in methods}  # hit@3 per evaluated PR (paired comparisons)
+    pr_segments = []
     sizes = defaultdict(int)
     for p in eval_set:
-        segs = ["all"] + ([segment_of(p)] if segment_of else [])
+        extra = segment_of(p) if segment_of else []
+        segs = ["all"] + ([extra] if isinstance(extra, str) else list(extra))
         for s in segs:
             sizes[s] += 1
         feats, truth = pr_features(p), truth_of(p)
+        pr_segments.append(segs)
         for name, fn in methods.items():
             pred = [x for x in fn(feats) if x != p.author]
+            per_pr[name].append(hit_at_k(pred, truth, 3))
             for s in segs:
                 a = acc[name][s]
                 for k in ks:
                     a[f"hit@{k}"].append(hit_at_k(pred, truth, k))
                 a["mrr"].append(mrr(pred, truth))
-    out = {"cutoff": cutoff.isoformat(), "n_eval": len(eval_set), "segment_sizes": dict(sizes), "methods": {}}
+    out = {"per_pr_hit3": per_pr, "per_pr_segments": pr_segments, "cutoff": cutoff.isoformat(), "n_eval": len(eval_set), "segment_sizes": dict(sizes), "methods": {}}
     for name in methods:
         out["methods"][name] = {s: {"n": len(v["mrr"]), **{k: round(sum(x) / len(x), 4) for k, x in v.items()}}
                                  for s, v in acc[name].items()}

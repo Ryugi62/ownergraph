@@ -24,24 +24,53 @@ def _iso(ts) -> str:
 
 Q_ELIGIBLE = """
 MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
-MATCH p=(d)-[:CHILD_OF*0..30]->(a:Directory)<-[:GOVERNS]-(o:OwnersFile)
-WHERE NOT any(n IN nodes(p)[0..length(p)] WHERE n.npo = true)
+MATCH p=(d)-[:CHILD_OF*0..30]->(a:Directory)
+WHERE NOT any(n IN nodes(p)[0..length(p)] WHERE coalesce(n.npo, false) = true)
+MATCH (a)<-[:GOVERNS]-(o:OwnersFile)
 MATCH (u:Person)-[:MEMBER_OF*0..3]->(g)-[:APPROVER_IN]->(o)
 RETURN DISTINCT u.login AS login, o.path AS owners_file"""
 
-Q_DECIDERS = """
+Q_SELF = """
 MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
-MATCH p1=(d)-[:CHILD_OF*0..2]->(a:Directory)<-[:CHILD_OF*0..2]-(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+MATCH (d)<-[:CHILD_OF*0..2]-(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
 WHERE pr.merged_at < $cutoff
-RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, min(length(p1)) AS hops, min(s.path) AS path"""
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, min(s.path) AS path"""
 
-Q_SIG_DECIDERS = """
+Q_NEARBY = """
+MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
+MATCH (d)-[:CHILD_OF*1..2]->(a:Directory)<-[:CHILD_OF*0..2]-(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+WHERE pr.merged_at < $cutoff
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, min(s.path) AS path"""
+
+Q_SCOPE = """
+MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
+MATCH (d)-[:UNDER]->(o:OwnersFile)<-[:UNDER]-(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+WHERE pr.merged_at < $cutoff
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, min(s.path) AS path"""
+
+Q_ANCESTOR = """
+MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
+MATCH (d)-[:UNDER]->(:OwnersFile)-[:PARENT_OWNERS*1..2]->(o2:OwnersFile)<-[:UNDER]-(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+WHERE pr.merged_at < $cutoff AND o2.path <> ''
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, min(s.path) AS path"""
+
+Q_SIG = """
 MATCH (d:Directory) WHERE d.path IN $cands WITH d ORDER BY size(d.path) DESC LIMIT 1
 MATCH (d)-[:CHILD_OF*0..30]->(a:Directory)<-[:GOVERNS]-(o:OwnersFile)-[:LABELS]->(sg:Sig)
 WITH DISTINCT sg
 MATCH (sg)<-[:LABELS]-(:OwnersFile)-[:GOVERNS]->(s:Directory)<-[:TOUCHES]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
 WHERE pr.merged_at < $cutoff
-RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, 5 AS hops, sg.id AS path"""
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, sg.id AS path"""
+
+Q_KEP_PRS = """
+MATCH (k:Kep {number:$num})<-[:IMPLEMENTS]-(pr:PR)<-[:APPROVED_PR]-(u:Person)
+WHERE pr.merged_at < $cutoff
+RETURN u.login AS login, pr.number AS pr, pr.merged_at AS at, 'KEP-' + toString(k.number) AS path"""
+
+# order = strongest evidence first; a PR keeps the strongest tier it was seen in
+TIERS = (("self", Q_SELF), ("scope", Q_SCOPE), ("nearby", Q_NEARBY), ("ancestor", Q_ANCESTOR), ("sig", Q_SIG))
+# strict back-off cascade (chosen on the July validation split, see results/val_tuning.json): a farther tier only breaks ties
+TIER_WEIGHT = {"kep": 2.0, "self": 3.0, "scope": 1.0, "nearby": 1e-4, "ancestor": 1e-5, "sig": 1e-6}
 
 Q_TRAIL = """
 OPTIONAL MATCH (k0:Kep) WHERE k0.number = $num
@@ -119,15 +148,25 @@ class FalkorRepository:
 
     def deciders(self, path: str, cutoff: Optional[datetime] = None) -> QueryResult:
         p = {"cands": self._cands(path), "cutoff": _epoch(cutoff)}
-        rows = self.run_read(Q_DECIDERS, p)
-        if sum(1 for r in rows if r["hops"] <= 2) < 3:  # sparse local history -> widen through the SIG label edge
-            rows += self.run_read(Q_SIG_DECIDERS, p)
-        out = []
-        for r in rows:
-            w = 1.0 / (1 + r["hops"])
-            out.append({"login": r["login"], "pr": r["pr"], "at": _iso(r["at"]), "path": r["path"], "n": 1, "w": round(w, 3)})
+        seen, out = set(), []
+        for tier, q in TIERS:
+            for r in self.run_read(q, p):
+                key = (r["login"], r["pr"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append({"login": r["login"], "pr": r["pr"], "at": _iso(r["at"]), "path": r["path"], "n": 1,
+                            "tier": tier, "w": TIER_WEIGHT[tier]})
         urls = [f"{GH}/pull/{n}" for n in sorted({r["pr"] for r in out}, reverse=True)[:5]]
-        return QueryResult(" ".join((Q_DECIDERS + " ⟶ widen: " + Q_SIG_DECIDERS).split()), p, out, urls)
+        cypher = " ⟶ ".join(f"[{t}] " + " ".join(q.split()) for t, q in TIERS)
+        return QueryResult(cypher, p, out, urls)
+
+    def kep_deciders(self, number: int, cutoff: Optional[datetime] = None) -> QueryResult:
+        """Earlier PRs that implemented the same KEP, and who approved them (graph edge PR-IMPLEMENTS->Kep)."""
+        p = {"num": int(number), "cutoff": _epoch(cutoff)}
+        rows = [{"login": r["login"], "pr": r["pr"], "at": _iso(r["at"]), "path": r["path"], "n": 1, "tier": "kep",
+                 "w": TIER_WEIGHT["kep"]} for r in self.run_read(Q_KEP_PRS, p)]
+        return QueryResult(" ".join(Q_KEP_PRS.split()), p, rows, [f"{GH}/pull/{r['pr']}" for r in rows[:5]])
 
     def decision_trail(self, key: str) -> QueryResult:
         digits = "".join(c for c in str(key) if c.isdigit())
@@ -151,6 +190,12 @@ class FalkorRepository:
         return self._q(Q_FIND, {"name": name})
 
     def stats(self) -> dict:
+        try:
+            return self._stats()
+        except Exception:  # empty graph key
+            return {"nodes": 0, "edges": 0}
+
+    def _stats(self) -> dict:
         n = self.run_read("MATCH (n) RETURN count(n) AS c")[0]["c"]
         e = self.run_read("MATCH ()-[r]->() RETURN count(r) AS c")[0]["c"]
         return {"nodes": n, "edges": e}
@@ -164,9 +209,7 @@ class FalkorRepository:
         for path in rules:
             dirs.update(ancestors(path + "/_"))
         self._w("UNWIND $d AS p MERGE (:Directory {path:p})", {"d": sorted(dirs)})
-        self._w("MATCH (c:Directory) WHERE c.path <> '' "
-                "WITH c, CASE WHEN c.path CONTAINS '/' THEN reverse(substring(reverse(c.path), size(split(c.path,'/')[-1]) + 1)) ELSE '' END AS par "
-                "MATCH (p:Directory {path: par}) MERGE (c)-[:CHILD_OF]->(p)")
+        self.link_directory_tree()
         for a, members in aliases.items():
             self._w("MERGE (:Alias {name:$a})", {"a": a})
         al = [{"a": a, "m": m} for a, ms in aliases.items() for m in ms]
@@ -222,9 +265,33 @@ class FalkorRepository:
         return len(rows)
 
     def link_directory_tree(self) -> None:
-        self._w("MATCH (c:Directory) WHERE c.path <> '' "
-                "WITH c, CASE WHEN c.path CONTAINS '/' THEN reverse(substring(reverse(c.path), size(split(c.path,'/')[-1]) + 1)) ELSE '' END AS par "
-                "MERGE (p:Directory {path: par}) MERGE (c)-[:CHILD_OF]->(p)")
+        paths = [r[0] for r in self._w("MATCH (d:Directory) RETURN d.path").result_set]
+        pairs = [{"c": p, "p": p.rsplit("/", 1)[0] if "/" in p else ""} for p in paths if p != ""]
+        missing = sorted({x["p"] for x in pairs} - set(paths))
+        if missing:
+            self._w("UNWIND $m AS p MERGE (:Directory {path:p})", {"m": missing})
+        for i in range(0, len(pairs), 500):
+            self._w("UNWIND $x AS e MATCH (c:Directory {path:e.c}), (p:Directory {path:e.p}) MERGE (c)-[:CHILD_OF]->(p)", {"x": pairs[i:i + 500]})
+
+    def link_ownership(self) -> None:
+        """Denormalised ownership edges: (Directory)-[:UNDER]->(nearest OwnersFile) and (OwnersFile)-[:PARENT_OWNERS]->(next OwnersFile up,
+        unless the child sets no_parent_owners). They let history queries stay inside one OWNERS scope instead of guessing by path depth."""
+        owners = {r[0]: bool(r[1]) for r in self._w("MATCH (o:OwnersFile) RETURN o.path, o.npo").result_set}
+        dirs = [r[0] for r in self._w("MATCH (d:Directory) RETURN d.path").result_set]
+
+        def nearest(path, strict=False):
+            parts = path.split("/") if path else []
+            for i in range(len(parts) - (1 if strict else 0), -1, -1):
+                cand = "/".join(parts[:i])
+                if cand in owners:
+                    return cand
+            return None
+        under = [{"d": d, "o": nearest(d)} for d in dirs if nearest(d) is not None]
+        for i in range(0, len(under), 500):
+            self._w("UNWIND $x AS e MATCH (d:Directory {path:e.d}), (o:OwnersFile {path:e.o}) MERGE (d)-[:UNDER]->(o)", {"x": under[i:i + 500]})
+        parents = [{"c": o, "p": nearest(o, strict=True)} for o, npo in owners.items() if not npo and o != "" and nearest(o, strict=True) is not None]
+        if parents:
+            self._w("UNWIND $x AS e MATCH (c:OwnersFile {path:e.c}), (p:OwnersFile {path:e.p}) MERGE (c)-[:PARENT_OWNERS]->(p)", {"x": parents})
 
     def upsert_keps(self, keps) -> int:
         for k in keps:
