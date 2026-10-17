@@ -87,7 +87,7 @@ the OWNERS rules - including where it does not win.
 - E2 llm_only [single-hop, n=20] accuracy: 0.0%
 - E2 llm_only [multi-hop, n=40] accuracy: 0.0%
 - E2 ablation (graph tools removed -> vector RAG), multi-hop drop: 72.5 pp
-- Tests: 94/94 passing
+- Tests: 97/97 passing
 - Problem size: OWNERS approver handles with zero approvals in the last 90 days (2026-07-19..2026-10-17): 99 of 167 (59.3%)
 - Problem size: OWNERS files where at most a quarter of the listed approvers were active: 46
 - Problem size: open KEPs whose recorded approvers hold no current approver or SIG-chair role: 45
@@ -148,7 +148,17 @@ MCP server (seven tools, stdio): `python -m ownergraph mcp` - `find_entity`, `ap
 | Who owns what, and who knows what | `approvers_for_path`: OWNERS inheritance + aliases (who *may*) ranked by recent approvals (who *does*) | `Q_ELIGIBLE`, `Q_SELF/Q_SCOPE/...` in `adapters/falkordb_repository.py` | 0:17 |
 | Tracing decisions back to their source | `explain_feature_gate`: gate -> KEP -> owning SIG -> approvers -> chairs, with the kep.yaml link | `Q_TRAIL` | 0:44 |
 | Keeping knowledge current as things change | `SyncService` (incremental upsert since the last snapshot; changed KEP statuses reported - unit-tested, the GitHub poller that feeds it is the first item under What's next) and `stale_decisions` (orphaned decisions) | `application/sync.py`, `Q_STALE` | 0:57 |
-| Answers with clear sources | every response carries the executed Cypher, the rows and GitHub URLs; no path -> "no evidence" | `application/ask.py`, UI "Show Cypher" | 0:35 and 1:12 |
+| Answers with clear sources | every response carries the executed Cypher, the rows and GitHub URLs; no path -> "no evidence" | `application/ask.py`, UI "Show Cypher" | 0:35 and 1:29 |
+
+## Track 01 key focus -> where it is in the product
+
+| Key focus (hackathon page) | Feature | Code / query | Demo video |
+|---|---|---|---|
+| Multi-hop reasoning | OWNERS inheritance walk, decision trail gate -> KEP -> SIG -> chairs | `Q_ELIGIBLE`, `Q_TRAIL` | 0:17, 0:44 |
+| Graph queries and algorithms as agent tools | seven tools, including FalkorDB PageRank over derived `RELIES_ON` edges | `mcp_server.py`, `Q_CENTRALITY` | 1:03 |
+| Tool selection through MCP | `python -m ownergraph mcp` (stdio), `scripts/mcp_smoke.py` lists and calls the tools | `adapters/mcp_server.py` | 2:04 |
+| Actions based on what the graph shows | `Route this issue: ...` drafts SIG, three approvers and open KEPs from the graph; a draft only, nothing is written to GitHub (non-goal) | `application/route.py` | 1:12 |
+| Explainable results | executed Cypher, typed path picture, GitHub sources, or "no evidence" | `application/ask.py`, UI | 0:35, 1:29 |
 
 ## Graph data model
 
@@ -209,6 +219,8 @@ All templates live in `ownergraph/adapters/falkordb_repository.py` (and are show
 | One FalkorDB instance can hold many isolated graphs (we use `org:kubernetes`, `e1:kubernetes@2026-08-01`, `val`) | hackathon page: "one instance can hold thousands of isolated graphs" |
 
 ## Limits (measured on the demo graph)
+
+E2 is one run of one model (`gemini-3.1-flash-lite`) with no repeats and no confidence interval; E1 reports paired bootstrap intervals. The live URL is served from a laptop and can be offline; Windows and `docker-compose.yml` were not tested.
 
 8,000 nodes and 29,853 edges; `make load` takes about 20 s; API graph query median 4.4 ms over 20 calls (measured 2026-10-17, docker FalkorDB, laptop); the full Kubernetes snapshot is 586 OWNERS files, 685 KEPs and 1,940 PRs. Loading another organisation needs its OWNERS files and PR approvals in the same JSON shapes (`scripts/fetch_data.py`); that second organisation is the second item under What's next, not something shipped today.
 

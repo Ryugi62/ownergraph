@@ -56,15 +56,15 @@ function draw(j){
     ppl.forEach(l=>{const dormant=(act[l]===0);s+=`<circle cx="400" cy="${py[l]}" r="6" fill="${dormant?'#b4281c':'#1b64da'}"/><text x="412" y="${py[l]+4}" font-size="12" fill="currentColor">${esc(l)}${act[l]!==undefined?'  ('+act[l]+')':''}</text>`});
   } else if(rows.length&&rows[0].gate!==undefined){
     const r0=rows[0];const chairs=[...new Set(rows.map(r=>r.chair).filter(Boolean))];const apps=[...new Set(rows.map(r=>r.approver).filter(Boolean))];
-    h=150;
+    h=160;
     s+=box(10,40,150,r0.gate||'(no gate)')+arrow(250,54,160,54,'INTRODUCES')+box(250,40,160,'KEP-'+r0.kep+' '+(r0.status||''))+arrow(410,54,470,54,'OWNED_BY')+box(470,40,150,r0.sig||'')
-      +arrow(545,118,545,68,'CHAIRS')+box(470,92,150,'chairs: '+chairs.slice(0,3).join(', ')+(chairs.length>3?' +'+(chairs.length-3):''))
-      +arrow(330,118,330,68,'APPROVED_KEP')+box(180,92,230,'approvers: '+apps.slice(0,3).join(', ')+(apps.length>3?' +'+(apps.length-3):''));
+      +arrow(545,104,545,68,'CHAIRS')+box(470,104,150,'chairs: '+chairs.slice(0,3).join(', ')+(chairs.length>3?' +'+(chairs.length-3):''))
+      +arrow(330,104,330,68,'APPROVED_KEP')+box(180,104,230,'approvers: '+apps.slice(0,3).join(', ')+(apps.length>3?' +'+(apps.length-3):''));
   } else if(rows.length&&rows[0].approvers!==undefined&&rows[0].sig!==undefined){
-    const r0=rows[0];h=150;
-    s+=box(10,40,150,'issue text (draft only)')+arrow(160,54,230,54,'UNDER, LABELS')+box(230,40,150,r0.sig)
-      +arrow(380,54,450,54,'OWNED_BY')+box(450,40,170,'open KEPs: '+(r0.keps||[]).slice(0,3).join(', '))
-      +arrow(305,118,305,68,'TOUCHES, APPROVED_PR')+box(150,92,300,'approvers: '+(r0.approvers||[]).slice(0,3).join(', '));
+    const r0=rows[0];h=160;
+    s+=box(10,40,180,'issue text (draft only)')+arrow(190,54,290,54,'UNDER, LABELS')+box(290,40,130,r0.sig)
+      +arrow(420,54,480,54,'OWNED_BY')+box(480,40,150,'open KEPs: '+(r0.keps||[]).slice(0,3).join(', '))
+      +arrow(355,104,355,68,'TOUCHES, APPROVED_PR')+box(190,104,330,'approvers: '+(r0.approvers||[]).slice(0,3).join(', '));
   } else if(rows.length&&rows[0].login!==undefined){
     h=Math.min(rows.length,8)*26+40;rows.slice(0,8).forEach((r,i)=>{s+=`<circle cx="30" cy="${30+i*26}" r="6" fill="#1b64da"/><text x="44" y="${34+i*26}" font-size="12" fill="currentColor">${esc(r.login)}  ${r.score!==undefined?Number(r.score).toFixed(4):''}</text>`});
     s+=`<text x="300" y="30" font-size="11" fill="currentColor" opacity=".6">PageRank over (author)-[:RELIES_ON]->(approver)</text>`;
