@@ -13,7 +13,7 @@ from .ports import QueryResult
 
 PATH_RE = re.compile(r"(?<![\w/])([\w.\-]+(?:/[\w.\-*]+)+)")
 KEP_RE = re.compile(r"\bKEP[- ]?(\d+)\b", re.I)
-GATE_RE = re.compile(r"\b([A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+)\b")
+GATE_RE = re.compile(r"\b((?=[A-Za-z0-9]*[a-z])(?=(?:[A-Za-z0-9]*[A-Z]){2})[A-Za-z0-9]{6,})\b")  # CamelCase gate names, acronym prefixes included (APISelfSubjectReview)
 CENTRAL_RE = re.compile(r"\b(load[- ]bearing|central\w*|pagerank|rel(?:y|ies|ied) on|most relied)\b", re.I)
 STALE_RE = re.compile(r"\b(stale|orphan\w*|abandon\w*|no longer)\b", re.I)
 

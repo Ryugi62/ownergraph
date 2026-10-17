@@ -132,3 +132,9 @@ def test_centrality_question_routes_to_pagerank_tool():  # UC-10
     svc = AskService(FakeRepo(), FakeLlm(), FakeClock(d(2026, 10, 1)))
     a = svc.ask("Which reviewers are load-bearing?")
     assert a.tool == "reviewer_centrality" and "bob" in a.text and not a.abstained
+
+
+@pytest.mark.parametrize("gate", ["APISelfSubjectReview", "CSIMigrationvSphere", "DRAResourceSliceMixins", "SidecarContainers"])
+def test_plan_extracts_feature_gate_names_with_acronym_prefixes(gate):  # regression: 3 of 20 sampled E2 questions abstained
+    tool, arg = svc()[0].plan(f"Who chairs the SIG that owns the KEP introducing the feature gate {gate}?")
+    assert (tool, arg) == ("explain_feature_gate", gate)
